@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% block title %}StreamVault · Início{% endblock %}
+
+{% macro live_card(c) -%}
+<div class="sv-card" data-id="{{ c.id }}">
+    <a href="/assistir/{{ c.id }}" class="sv-card-link" aria-label="Assistir {{ c.name }}">
+        <div class="sv-thumb sv-thumb-live">
+            {{ sv_img(c.logo, c.name) }}
+            <div class="sv-thumb-fallback"><i class="bi bi-tv"></i></div>
+            <span class="sv-live-badge"><i class="bi bi-record-circle-fill"></i> AO VIVO</span>
+            <div class="sv-card-overlay">
+                <div class="sv-ov-actions">
+                    <a href="/assistir/{{ c.id }}" class="sv-play-btn" aria-label="Assistir"><i class="bi bi-play-fill"></i></a>
+                </div>
+                <div class="sv-card-title text-white mb-0">{{ c.name }}</div>
+                <div class="sv-ov-meta"><span>{{ c.group_name }}</span><span>AO VIVO</span></div>
+            </div>
+        </div>
+    </a>
+    <div class="sv-card-title">{{ c.name }}</div>
+    <div class="sv-card-sub">{{ c.group_name }}</div>
+</div>
+{%- endmacro %}
+
+{% macro movie_card(m) -%}
+<div class="sv-card" data-id="{{ m.id }}">
+    <a href="/detalhes/{{ m.id }}" class="sv-card-link" aria-label="Detalhes de {{ m.name }}">
+        <div class="sv-thumb">
+            {{ sv_img(m.logo, m.name) }}
+            <div class="sv-thumb-fallback"><i class="bi bi-film"></i></div>
+            <div class="sv-card-overlay">
+                <div class="sv-ov-actions">
+                    <a href="/assistir/{{ m.id }}" class="sv-play-btn" aria-label="Assistir"><i class="bi bi-play-fill"></i></a>
+                    <button class="sv-fav-btn sv-fav" data-id="{{ m.id }}" data-type="movie" data-name="{{ m.name }}" data-logo="{{ m.logo }}" data-url="{{ m.url }}" aria-label="Minha Lista"><i class="bi bi-plus-lg"></i></button>
+                </div>
+                <div class="sv-ov-meta">
+                    {% if m.year %}<span>{{ m.year }}</span>{% endif %}
+                    {% if m.duration %}<span>{{ m.duration }}</span>{% endif %}
+                    <span class="sv-ov-note"><i class="bi bi-star-fill"></i> {{ m.rating or '—' }}</span>
+                </div>
+                <div class="sv-ov-desc">{{ m.description or m.category }}</div>
+            </div>
+        </div>
+    </a>
+    <div class="sv-card-title">{{ m.name }}</div>
+    <div class="sv-card-sub">{{ m.category }}</div>
+</div>
+{%- endmacro %}
+
+{% macro series_card(s) -%}
+<div class="sv-card" data-series="{{ s.series_name }}">
+    <a href="/detalhes-series/{{ s.series_name | urlencode }}" class="sv-card-link" aria-label="Detalhes de {{ s.series_name }}">
+        <div class="sv-thumb">
+            {{ sv_img(s.logo, s.series_name) }}
+            <div class="sv-thumb-fallback"><i class="bi bi-collection-play"></i></div>
+            <div class="sv-card-overlay">
+                <div class="sv-ov-actions">
+                    <a href="/detalhes-series/{{ s.series_name | urlencode }}" class="sv-play-btn" aria-label="Abrir"><i class="bi bi-play-fill"></i></a>
+                    <button class="sv-fav-btn sv-fav" data-id="{{ s.series_name }}" data-type="series" data-name="{{ s.series_name }}" data-logo="{{ s.logo }}" data-url="" aria-label="Minha Lista"><i class="bi bi-plus-lg"></i></button>
+                </div>
+                <div class="sv-ov-meta"><span>{{ s.eps }} episódios</span></div>
+                <div class="sv-ov-desc">{{ s.series_name }}</div>
+            </div>
+        </div>
+    </a>
+    <div class="sv-card-title">{{ s.series_name }}</div>
+    <div class="sv-card-sub">{{ s.eps }} episódios</div>
+</div>
+{%- endmacro %}
+
+{% macro resume_card(h) -%}
+<div class="sv-card" data-id="{{ h.content_id }}">
+    <a href="/assistir/{{ h.content_id }}" class="sv-card-link" aria-label="Continuar {{ h.name }}">
+        <div class="sv-thumb">
+            {{ sv_img(h.logo, h.name) }}
+            <div class="sv-thumb-fallback"><i class="bi bi-play-circle"></i></div>
+            <div class="sv-progress" style="width:{{ (h.position / h.duration * 100) if h.duration else 0 }}%"></div>
+            <span class="sv-progress-pct">{{ '%d'|format((h.position / h.duration * 100) if h.duration else 0) }}%</span>
+            <div class="sv-card-overlay">
+                <div class="sv-ov-actions">
+                    <a href="/assistir/{{ h.content_id }}" class="sv-play-btn" aria-label="Continuar"><i class="bi bi-play-fill"></i></a>
+                </div>
+                <div class="sv-card-title text-white mb-0">{{ h.name }}</div>
+            </div>
+        </div>
+    </a>
+    <div class="sv-card-title">{{ h.name }}</div>
+</div>
+{%- endmacro %}
+
+{% block content %}
+<div>
+    {% if not configured %}
+    <div class="container-fluid px-3 px-lg-4">
+        <div class="sv-empty text-center py-5 my-5">
+            <i class="bi bi-broadcast-pin display-1 text-accent"></i>
+            <h2 class="mt-3">Configure sua lista IPTV para começar</h2>
+            <p class="text-secondary">Adicione a URL da sua lista M3U nas configurações para carregar canais, filmes e séries.</p>
+            <a href="/configuracoes" class="btn sv-btn-primary mt-2"><i class="bi bi-gear"></i> Configurar IPTV</a>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- HERO NETFLIX STYLE -->
+    {% if hero %}
+    <section class="sv-hero" style="background-image:linear-gradient(0deg, var(--background) 5%, rgba(8,9,13,.5) 60%), url('{{ hero.logo or '' }}');">
+        <div class="sv-hero-body">
+            <span class="sv-badge"><i class="bi bi-broadcast"></i> {{ hero.group_name or hero.category or 'Destaque' }}</span>
+            <h1 class="sv-hero-title">{{ hero.name }}</h1>
+            <div class="sv-hero-meta">
+                {% if hero.year %}<span class="sv-meta-pill"><i class="bi bi-calendar"></i> {{ hero.year }}</span>{% endif %}
+                {% if hero.rating %}<span class="sv-meta-pill"><i class="bi bi-star-fill"></i> {{ hero.rating }}</span>{% endif %}
+                <span class="sv-meta-pill"><i class="bi bi-play-circle"></i> {{ 'Ao vivo' if hero.type == 'live' else 'Filme' if hero.type == 'movie' else 'Série' }}</span>
+            </div>
+            <p class="sv-hero-desc">{{ hero.description or "Assista agora mesmo pelo StreamVault." }}</p>
+            <div class="sv-hero-actions">
+                <a href="/assistir/{{ hero.id }}" class="btn sv-btn-primary"><i class="bi bi-play-fill"></i> Assistir agora</a>
+                <button class="btn sv-btn-ghost sv-fav" data-id="{{ hero.id }}" data-type="{{ hero.type }}" data-name="{{ hero.name }}" data-logo="{{ hero.logo }}" data-url="{{ hero.url }}">
+                    <i class="bi bi-plus-lg"></i> Minha Lista
+                </button>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Conteúdo das seções -->
+    <div class="container-fluid px-3 px-lg-4">
+
+    <!-- CONTINUAR ASSISTINDO -->
+    {% if resume %}
+    <section class="sv-section">
+        <div class="sv-section-head">
+            <h3 class="sv-section-title"><i class="bi bi-clock-history"></i> Continue assistindo</h3>
+        </div>
+        <div class="sv-carousel">
+            <button class="sv-carousel-btn prev" aria-label="Anterior"><i class="bi bi-chevron-left"></i></button>
+            <div class="sv-row" id="rowResume">
+                {% for h in resume %}{{ resume_card(h) }}{% endfor %}
+            </div>
+            <button class="sv-carousel-btn next" aria-label="Próximo"><i class="bi bi-chevron-right"></i></button>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- TV AO VIVO -->
+    {% if live %}
+    <section class="sv-section">
+        <div class="sv-section-head">
+            <h3 class="sv-section-title"><i class="bi bi-broadcast"></i> Ao vivo agora</h3>
+            <a href="/canais" class="sv-link">Ver todos</a>
+        </div>
+        <div class="sv-carousel">
+            <button class="sv-carousel-btn prev" aria-label="Anterior"><i class="bi bi-chevron-left"></i></button>
+            <div class="sv-row">
+                {% for c in live %}{{ live_card(c) }}{% endfor %}
+            </div>
+            <button class="sv-carousel-btn next" aria-label="Próximo"><i class="bi bi-chevron-right"></i></button>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- FILMES EM DESTAQUE -->
+    {% if movies %}
+    <section class="sv-section">
+        <div class="sv-section-head">
+            <h3 class="sv-section-title"><i class="bi bi-film"></i> Filmes em destaque</h3>
+            <a href="/filmes" class="sv-link">Ver todos</a>
+        </div>
+        <div class="sv-carousel">
+            <button class="sv-carousel-btn prev" aria-label="Anterior"><i class="bi bi-chevron-left"></i></button>
+            <div class="sv-row">
+                {% for m in movies %}{{ movie_card(m) }}{% endfor %}
+            </div>
+            <button class="sv-carousel-btn next" aria-label="Próximo"><i class="bi bi-chevron-right"></i></button>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- SÉRIES EM DESTAQUE -->
+    {% if series %}
+    <section class="sv-section">
+        <div class="sv-section-head">
+            <h3 class="sv-section-title"><i class="bi bi-collection-play"></i> Séries em destaque</h3>
+            <a href="/series" class="sv-link">Ver todas</a>
+        </div>
+        <div class="sv-carousel">
+            <button class="sv-carousel-btn prev" aria-label="Anterior"><i class="bi bi-chevron-left"></i></button>
+            <div class="sv-row">
+                {% for s in series %}{{ series_card(s) }}{% endfor %}
+            </div>
+            <button class="sv-carousel-btn next" aria-label="Próximo"><i class="bi bi-chevron-right"></i></button>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- MAIS ASSISTIDOS -->
+    {% if most_watched %}
+    <section class="sv-section">
+        <div class="sv-section-head">
+            <h3 class="sv-section-title"><i class="bi bi-graph-up-arrow"></i> Mais assistidos</h3>
+        </div>
+        <div class="sv-carousel">
+            <button class="sv-carousel-btn prev" aria-label="Anterior"><i class="bi bi-chevron-left"></i></button>
+            <div class="sv-row">
+                {% for m in most_watched %}
+                    {% if m.type == 'live' %}{{ live_card(m) }}
+                    {% elif m.type == 'series' %}
+                        <div class="sv-card" data-series="{{ m.series_name or m.name }}">
+                            <a href="/detalhes-series/{{ (m.series_name or m.name) | urlencode }}" class="sv-card-link">
+                                <div class="sv-thumb">{{ sv_img(m.logo, m.name) }}<div class="sv-thumb-fallback"><i class="bi bi-collection-play"></i></div></div>
+                            </a>
+                            <div class="sv-card-title">{{ m.series_name or m.name }}</div>
+                        </div>
+                    {% else %}{{ movie_card(m) }}{% endif %}
+                {% endfor %}
+            </div>
+            <button class="sv-carousel-btn next" aria-label="Próximo"><i class="bi bi-chevron-right"></i></button>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- ADICIONADOS RECENTEMENTE -->
+    {% if recently_added %}
+    <section class="sv-section">
+        <div class="sv-section-head">
+            <h3 class="sv-section-title"><i class="bi bi-stars"></i> Adicionados recentemente</h3>
+        </div>
+        <div class="sv-carousel">
+            <button class="sv-carousel-btn prev" aria-label="Anterior"><i class="bi bi-chevron-left"></i></button>
+            <div class="sv-row">
+                {% for m in recently_added %}
+                    {% if m.type == 'live' %}{{ live_card(m) }}
+                    {% elif m.type == 'series' %}
+                        <div class="sv-card" data-series="{{ m.series_name or m.name }}">
+                            <a href="/detalhes-series/{{ (m.series_name or m.name) | urlencode }}" class="sv-card-link">
+                                <div class="sv-thumb">{{ sv_img(m.logo, m.name) }}<div class="sv-thumb-fallback"><i class="bi bi-collection-play"></i></div></div>
+                            </a>
+                            <div class="sv-card-title">{{ m.series_name or m.name }}</div>
+                        </div>
+                    {% else %}{{ movie_card(m) }}{% endif %}
+                {% endfor %}
+            </div>
+            <button class="sv-carousel-btn next" aria-label="Próximo"><i class="bi bi-chevron-right"></i></button>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- MINHA LISTA -->
+    {% if favorites %}
+    <section class="sv-section">
+        <div class="sv-section-head">
+            <h3 class="sv-section-title"><i class="bi bi-bookmark-heart"></i> Minha Lista</h3>
+            <a href="/minha-lista" class="sv-link">Ver tudo</a>
+        </div>
+        <div class="sv-carousel">
+            <button class="sv-carousel-btn prev" aria-label="Anterior"><i class="bi bi-chevron-left"></i></button>
+            <div class="sv-row">
+                {% for f in favorites %}
+                    {% if f.content_type == 'live' %}{{ live_card(f) }}
+                    {% elif f.content_type == 'series' %}
+                        <div class="sv-card" data-series="{{ f.name }}">
+                            <a href="/detalhes-series/{{ f.name | urlencode }}" class="sv-card-link">
+                                <div class="sv-thumb">{{ sv_img(f.logo, f.name) }}<div class="sv-thumb-fallback"><i class="bi bi-collection-play"></i></div></div>
+                            </a>
+                            <div class="sv-card-title">{{ f.name }}</div>
+                        </div>
+                    {% else %}{{ movie_card(f) }}{% endif %}
+                {% endfor %}
+            </div>
+            <button class="sv-carousel-btn next" aria-label="Próximo"><i class="bi bi-chevron-right"></i></button>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- CATEGORIAS -->
+    {% if categories %}
+    <section class="sv-section">
+        <div class="sv-section-head">
+            <h3 class="sv-section-title"><i class="bi bi-grid-3x3-gap"></i> Categorias</h3>
+        </div>
+        <div class="sv-cat-grid">
+            {% for cat in categories %}
+            <a href="/filmes?category={{ cat.name | urlencode }}" class="sv-cat-card">
+                <i class="bi bi-collection"></i>
+                <div>{{ cat.name }}<small>{{ cat.cnt }} itens</small></div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% endif %}  {# fecha 'if not configured' (linha 93) #}
+
+    </div>
+</div>
+{% endblock %}

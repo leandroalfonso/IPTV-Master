@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Séries · StreamVault{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 px-lg-4 py-3">
+    <h2 class="sv-page-title"><i class="bi bi-collection-play"></i> Séries</h2>
+
+    {% if not configured %}
+    <div class="sv-empty py-5 text-center">
+        <i class="bi bi-collection-play display-1 text-accent"></i>
+        <h4 class="mt-3">Nenhuma lista IPTV configurada</h4>
+        <a href="/configuracoes" class="btn sv-btn-primary mt-2">Configurar IPTV</a>
+    </div>
+    {% else %}
+
+    <!-- Filtro por nome (via query string ?name=) -->
+    {% set sel = request.args.get('name', '') %}
+    {% if sel %}
+        {% set episodes = [] %}
+    {% endif %}
+
+    <div class="row g-3" id="seriesGrid">
+        {% for s in series_list %}
+        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <div class="sv-card" data-series="{{ s.series_name }}">
+                <a href="/detalhes-series/{{ s.series_name | urlencode }}" class="sv-card-link">
+                    <div class="sv-thumb">
+                        {{ sv_img(s.logo, s.series_name) }}
+                        <div class="sv-thumb-fallback"><i class="bi bi-collection-play"></i></div>
+                        <div class="sv-card-overlay">
+                            <a href="/detalhes-series/{{ s.series_name | urlencode }}" class="sv-play-btn"><i class="bi bi-play-fill"></i></a>
+                        </div>
+                    </div>
+                    <div class="sv-card-title">{{ s.series_name }}</div>
+                    <div class="sv-card-sub">{{ s.eps }} episódios</div>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/infinite.js') }}"></script>
+{% endblock %}

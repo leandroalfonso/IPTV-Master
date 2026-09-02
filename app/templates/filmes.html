@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Filmes · StreamVault{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 px-lg-4 py-3">
+    <h2 class="sv-page-title"><i class="bi bi-film"></i> Filmes</h2>
+
+    {% if not configured %}
+    <div class="sv-empty py-5 text-center">
+        <i class="bi bi-film display-1 text-accent"></i>
+        <h4 class="mt-3">Nenhuma lista IPTV configurada</h4>
+        <a href="/configuracoes" class="btn sv-btn-primary mt-2">Configurar IPTV</a>
+    </div>
+    {% else %}
+
+    <div class="sv-chips" id="catChips">
+        <button class="sv-chip active" data-cat="">Todos</button>
+        {% for c in categories %}
+        <button class="sv-chip" data-cat="{{ c.name }}">{{ c.name }}</button>
+        {% endfor %}
+    </div>
+
+    <div class="row g-3" id="movieGrid">
+        {% for m in items %}
+        <div class="col-6 col-sm-4 col-md-3 col-lg-2 sv-col" data-cat="{{ m.category }}">
+            <div class="sv-card" data-id="{{ m.id }}">
+                <a href="/detalhes/{{ m.id }}" class="sv-card-link">
+                    <div class="sv-thumb">
+                        {{ sv_img(m.logo, m.name) }}
+                        <div class="sv-thumb-fallback"><i class="bi bi-film"></i></div>
+                        <div class="sv-card-overlay">
+                            <a href="/assistir/{{ m.id }}" class="sv-play-btn"><i class="bi bi-play-fill"></i></a>
+                            <button class="sv-fav-btn sv-fav" data-id="{{ m.id }}" data-type="movie" data-name="{{ m.name }}" data-logo="{{ m.logo }}" data-url="{{ m.url }}"><i class="bi bi-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="sv-card-title">{{ m.name }}</div>
+                    <div class="sv-card-sub">{{ m.category }}</div>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div id="movieEmpty" class="sv-empty d-none"><p class="text-secondary">Nenhum filme nesta categoria.</p></div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('#catChips .sv-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('#catChips .sv-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const cat = chip.dataset.cat;
+        let shown = 0;
+        document.querySelectorAll('#movieGrid .sv-col').forEach(col => {
+            const ok = !cat || col.dataset.cat === cat;
+            col.style.display = ok ? '' : 'none';
+            if (ok) shown++;
+        });
+        document.getElementById('movieEmpty').classList.toggle('d-none', shown > 0);
+    });
+});
+</script>
+<script src="{{ url_for('static', filename='js/infinite.js') }}"></script>
+{% endblock %}

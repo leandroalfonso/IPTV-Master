@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Minha Lista · StreamVault{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 px-lg-4 py-3">
+    <h2 class="sv-page-title"><i class="bi bi-bookmark-heart"></i> Minha Lista</h2>
+
+    {% if not favorites %}
+    <div class="sv-empty py-5 text-center">
+        <i class="bi bi-bookmark display-1 text-accent"></i>
+        <h4 class="mt-3">Sua lista está vazia</h4>
+        <p class="text-secondary">Adicione filmes, séries e canais com o botão "Minha Lista".</p>
+        <a href="/" class="btn sv-btn-primary mt-2">Explorar conteúdos</a>
+    </div>
+    {% else %}
+    <div class="row g-3" id="favGrid">
+        {% for f in favorites %}
+        <div class="col-6 col-sm-4 col-md-3 col-lg-2" data-id="{{ f.content_id }}">
+            <div class="sv-card">
+                <a href="/assistir/{{ f.content_id }}" class="sv-card-link">
+                    <div class="sv-thumb">
+                        {{ sv_img(f.logo, f.name) }}
+                        <div class="sv-thumb-fallback"><i class="bi bi-play-circle"></i></div>
+                        <div class="sv-card-overlay">
+                            <a href="/assistir/{{ f.content_id }}" class="sv-play-btn"><i class="bi bi-play-fill"></i></a>
+                            <button class="sv-fav-btn sv-fav-remove" data-id="{{ f.content_id }}"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="sv-card-title">{{ f.name }}</div>
+                    <div class="sv-card-sub">{{ f.content_type }}</div>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.sv-fav-remove').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const id = btn.dataset.id;
+        const res = await fetch('/api/favorites/' + id, {method: 'DELETE'});
+        if (res.ok) {
+            btn.closest('.col-6, .col-sm-4, .col-md-3, .col-lg-2').remove();
+            SV.toast('Removido da Minha Lista');
+        }
+    });
+});
+</script>
+{% endblock %}

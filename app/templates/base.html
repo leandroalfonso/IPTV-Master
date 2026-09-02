@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+{% macro sv_img(logo, alt, cls='') -%}
+{% if logo -%}
+<img class="{{ cls }}" loading="lazy" src="/proxy/image?u={{ logo | urlencode }}" alt="{{ alt }}" referrerpolicy="no-referrer" onerror="this.style.display='none'">
+{%- else -%}
+{%- endif %}
+{%- endmacro %}
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#08090d">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <title>{% block title %}StreamVault{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Header premium -->
+    <nav class="navbar sv-navbar sticky-top" id="svNavbar">
+        <div class="container-fluid px-3 px-lg-4">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn d-lg-none sv-btn-ghost p-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#svOffcanvas" aria-label="Abrir menu" style="border:none;background:transparent;color:var(--text-primary);font-size:1.4rem;">
+                    <i class="bi bi-list"></i>
+                </button>
+                <a class="navbar-brand sv-brand" href="/">
+                    <i class="bi bi-play-btn-fill"></i> StreamVault
+                </a>
+            </div>
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 d-none d-lg-flex">
+                <li class="nav-item"><a class="nav-link" href="/"><i class="bi bi-house"></i> Início</a></li>
+                <li class="nav-item"><a class="nav-link" href="/canais"><i class="bi bi-broadcast"></i> TV ao Vivo</a></li>
+                <li class="nav-item"><a class="nav-link" href="/filmes"><i class="bi bi-film"></i> Filmes</a></li>
+                <li class="nav-item"><a class="nav-link" href="/series"><i class="bi bi-collection-play"></i> Séries</a></li>
+                <li class="nav-item"><a class="nav-link" href="/minha-lista"><i class="bi bi-bookmark-heart"></i> Minha Lista</a></li>
+            </ul>
+            <div class="d-flex align-items-center gap-2">
+                <form class="d-flex sv-search" role="search" onsubmit="return false;">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input id="svSearch" class="form-control" type="search" placeholder="Pesquisar filmes, séries e canais..." aria-label="Pesquisar" autocomplete="off">
+                    </div>
+                </form>
+                <button class="btn sv-btn-ghost sv-theme-toggle p-2" type="button" aria-label="Alternar tema" title="Alternar tema" style="border:none;background:transparent;color:var(--text-primary);font-size:1.3rem;">
+                    <i class="bi bi-sun-fill"></i>
+                </button>
+                <button class="btn sv-btn-ghost sv-profile-btn p-2" type="button" aria-label="Perfil" title="Perfil" style="border:none;background:transparent;color:var(--text-primary);font-size:1.1rem;">
+                    <i class="bi bi-person-circle"></i>
+                </button>
+                <a class="btn sv-btn-ghost p-2" href="/configuracoes" aria-label="Configurações" style="border:none;background:transparent;color:var(--text-primary);font-size:1.3rem;">
+                    <i class="bi bi-gear"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Offcanvas mobile -->
+    <div class="offcanvas offcanvas-start sv-offcanvas" tabindex="-1" id="svOffcanvas" aria-label="Menu de navegação">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title sv-brand mb-0"><i class="bi bi-play-btn-fill"></i> StreamVault</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
+        </div>
+        <div class="offcanvas-body">
+            <ul class="nav flex-column gap-1">
+                <li><a class="nav-link" href="/"><i class="bi bi-house"></i> Início</a></li>
+                <li><a class="nav-link" href="/canais"><i class="bi bi-broadcast"></i> TV ao Vivo</a></li>
+                <li><a class="nav-link" href="/filmes"><i class="bi bi-film"></i> Filmes</a></li>
+                <li><a class="nav-link" href="/series"><i class="bi bi-collection-play"></i> Séries</a></li>
+                <li><a class="nav-link" href="/minha-lista"><i class="bi bi-bookmark-heart"></i> Minha Lista</a></li>
+                <li><a class="nav-link" href="/configuracoes"><i class="bi bi-gear"></i> Configurações</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Barra de pesquisa dinâmica (resultados) -->
+    <div id="svSearchResults" class="sv-search-results d-none"></div>
+
+    <!-- Conteúdo -->
+    <main class="sv-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="sv-footer">
+        <div class="container-fluid px-3 px-lg-4">
+            <span><i class="bi bi-play-btn-fill"></i> StreamVault</span>
+            <small class="text-secondary">Seu entretenimento em um só lugar · uso privado</small>
+        </div>
+    </footer>
+
+    <!-- Toast de notificações -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="svToast" class="toast align-items-center border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body" id="svToastBody"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

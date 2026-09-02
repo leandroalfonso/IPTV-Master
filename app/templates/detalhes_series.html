@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ series_name }} · StreamVault{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 px-lg-4 py-3">
+    <a href="/series" class="btn sv-btn-ghost mb-3"><i class="bi bi-arrow-left"></i> Séries</a>
+
+    <div class="sv-detail">
+        <div class="sv-detail-poster">
+            {% if cover %}<img src="{{ cover }}" alt="{{ series_name }}" onerror="this.style.display='none'">{% else %}<div class="sv-thumb-fallback-lg"><i class="bi bi-collection-play"></i></div>{% endif %}
+        </div>
+        <div class="sv-detail-info">
+            <span class="sv-badge">SÉRIE</span>
+            <h1>{{ series_name }}</h1>
+            <p class="text-secondary">{{ episodes | length }} episódios</p>
+        </div>
+    </div>
+
+    {% if seasons %}
+    {% for season, eps in seasons.items() %}
+    <h3 class="sv-section-title mt-4"><i class="bi bi-collection"></i> Temporada {{ season }}</h3>
+    <div class="list-group sv-ep-list">
+        {% for ep in eps %}
+        <a href="/assistir/{{ ep.id }}" class="list-group-item sv-ep-item">
+            <span class="sv-ep-badge">E{{ '%02d'|format(ep.episode) }}</span>
+            <span class="sv-ep-name">{{ ep.name }}</span>
+            <i class="bi bi-play-circle sv-ep-play"></i>
+        </a>
+        {% endfor %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="sv-empty py-4"><p class="text-secondary">Nenhum episódio encontrado.</p></div>
+    {% endif %}
+</div>
+{% endblock %}

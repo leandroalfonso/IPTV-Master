@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Configurações · StreamVault{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 px-lg-4 py-3" style="max-width:900px;">
+    <h2 class="sv-page-title"><i class="bi bi-gear"></i> Configurações</h2>
+
+    {% if not configured %}
+    <div class="alert sv-alert">Nenhuma lista IPTV configurada ainda. Adicione abaixo para começar.</div>
+    {% endif %}
+
+    <!-- Status -->
+    <div class="sv-card-block mb-4">
+        <h5><i class="bi bi-activity"></i> Status da lista</h5>
+        <div class="row text-center">
+            <div class="col-3"><div class="sv-stat"><span id="statTotal">{{ summary.total }}</span><small>Total</small></div></div>
+            <div class="col-3"><div class="sv-stat"><span id="statLive">{{ summary.channels }}</span><small>Canais</small></div></div>
+            <div class="col-3"><div class="sv-stat"><span id="statMovies">{{ summary.movies }}</span><small>Filmes</small></div></div>
+            <div class="col-3"><div class="sv-stat"><span id="statSeries">{{ summary.series }}</span><small>Séries</small></div></div>
+        </div>
+    </div>
+
+    <!-- Fonte IPTV -->
+    <form id="configForm" class="sv-card-block mb-4">
+        <h5><i class="bi bi-broadcast"></i> Fonte IPTV</h5>
+        <div class="mb-3">
+            <label class="form-label">Tipo</label>
+            <select class="form-select" name="IPTV_TYPE" id="iptvType">
+                <option value="m3u" {% if iptv_type=='m3u' %}selected{% endif %}>M3U (URL ou arquivo)</option>
+                <option value="xtream" {% if iptv_type=='xtream' %}selected{% endif %}>Xtream Codes (em breve)</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">URL da lista M3U ou caminho de arquivo local</label>
+            <input class="form-control" type="text" name="IPTV_M3U_URL" id="iptvUrl"
+                   placeholder="https://exemplo.com/lista.m3u  ou  data/minha-lista.m3u"
+                   value="{{ '' }}">
+            <div class="form-text">A URL nunca é exposta no frontend. Fica salva apenas no servidor (.env).</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Cache da lista (minutos)</label>
+            <input class="form-control" type="number" name="IPTV_CACHE_MINUTES" id="cacheMin" value="30" min="1" max="1440">
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn sv-btn-primary"><i class="bi bi-save"></i> Salvar configuração</button>
+            <button type="button" class="btn sv-btn-ghost" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Atualizar lista</button>
+            <button type="button" class="btn sv-btn-ghost" id="btnClear"><i class="bi bi-trash"></i> Limpar cache</button>
+        </div>
+        <div id="cfgMsg" class="mt-2"></div>
+    </form>
+
+    <div class="sv-card-block">
+        <h5><i class="bi bi-info-circle"></i> Sobre</h5>
+        <p class="text-secondary mb-0">
+            StreamVault é um sistema de streaming IPTV pessoal. Os dados são lidos da sua própria lista
+            e armazenados localmente em SQLite. O servidor controla todo o acesso à fonte IPTV.
+        </p>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/config.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,12 @@
+# Ambiente
+venv/
+__pycache__/
+*.pyc
+
+# Segredos e dados locais (não versionar)
+.env
+data/streamvault.db
+*.db
+
+# Logs
+*.log

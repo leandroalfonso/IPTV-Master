@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ item.name }} · StreamVault{% endblock %}
+{% block content %}
+<div class="container-fluid px-3 px-lg-4 py-3">
+    {% if not item %}
+    <div class="sv-empty py-5 text-center"><h4>Conteúdo não encontrado.</h4></div>
+    {% else %}
+    <a href="javascript:history.back()" class="btn sv-btn-ghost mb-3"><i class="bi bi-arrow-left"></i> Voltar</a>
+
+    {% if tmdb_meta and tmdb_meta.backdrop %}
+    <div class="sv-detail-backdrop mb-4" style="background-image:linear-gradient(180deg, rgba(8,9,13,.35), var(--background) 92%), url('{{ tmdb_meta.backdrop }}'); background-size:cover; background-position:center 25%; border-radius:var(--radius); min-height:280px;"></div>
+    {% endif %}
+
+    <div class="sv-detail">
+        <div class="sv-detail-poster">
+            {% if tmdb_meta and tmdb_meta.poster %}
+            <img src="{{ tmdb_meta.poster }}" alt="{{ item.name }}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">
+            {% else %}
+            {{ sv_img(item.logo, item.name) }}
+            {% endif %}
+        </div>
+        <div class="sv-detail-info">
+            <span class="sv-badge">{{ item.type | upper }}</span>
+            <h1>{{ item.name }}</h1>
+            {% if tmdb_meta and tmdb_meta.original_title and tmdb_meta.original_title != item.name %}
+            <p class="text-secondary mb-1"><small><em>{{ tmdb_meta.original_title }}</em></small></p>
+            {% endif %}
+            {% if item.category %}<p class="text-secondary">{{ item.category }}{% if item.group_name %} · {{ item.group_name }}{% endif %}</p>{% endif %}
+
+            {% if tmdb_meta %}
+            <div class="sv-detail-meta d-flex flex-wrap gap-3 align-items-center mb-3">
+                {% if tmdb_meta.rating %}
+                <span class="sv-meta-pill" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border-radius:20px;padding:4px 12px;">
+                    <i class="bi bi-star-fill text-warning"></i> {{ "%.1f"|format(tmdb_meta.rating) }}
+                    {% if tmdb_meta.vote_count %}<small class="text-secondary">({{ tmdb_meta.vote_count }})</small>{% endif %}
+                </span>
+                {% endif %}
+                {% if tmdb_meta.year %}<span class="sv-meta-pill" style="background:rgba(255,255,255,.08);border-radius:20px;padding:4px 12px;">{{ tmdb_meta.year }}</span>{% endif %}
+                {% if tmdb_meta.runtime %}<span class="sv-meta-pill" style="background:rgba(255,255,255,.08);border-radius:20px;padding:4px 12px;">{{ tmdb_meta.runtime // 60 }}h{{ '%02d'|format(tmdb_meta.runtime % 60) }}</span>{% endif %}
+                {% for g in tmdb_meta.genres[:4] %}<span class="sv-meta-pill" style="background:rgba(255,255,255,.08);border-radius:20px;padding:4px 12px;">{{ g }}</span>{% endfor %}
+            </div>
+            {% endif %}
+
+            {% if tmdb_meta and tmdb_meta.tagline %}
+            <p class="fst-italic text-secondary"><em>“{{ tmdb_meta.tagline }}”</em></p>
+            {% endif %}
+            {% if tmdb_meta and tmdb_meta.overview %}
+            <p>{{ tmdb_meta.overview }}</p>
+            {% elif item.description %}
+            <p>{{ item.description }}</p>
+            {% endif %}
+
+            <div class="sv-detail-actions">
+                <a href="/assistir/{{ item.id }}" class="btn sv-btn-primary"><i class="bi bi-play-fill"></i> Assistir</a>
+                <button class="btn sv-btn-ghost sv-fav" data-id="{{ item.id }}" data-type="{{ item.type }}" data-name="{{ item.name }}" data-logo="{{ item.logo }}" data-url="{{ item.url }}">
+                    <i class="bi {% if is_fav %}bi-check2{% else %}bi-plus-lg{% endif %}"></i>
+                    <span>{% if is_fav %}Na minha lista{% else %}Minha Lista{% endif %}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% if episodes %}
+    <h3 class="sv-section-title mt-4"><i class="bi bi-list-ul"></i> Episódios</h3>
+    <div class="list-group sv-ep-list">
+        {% for ep in episodes %}
+        <a href="/assistir/{{ ep.id }}" class="list-group-item sv-ep-item">
+            <span class="sv-ep-badge">T{{ '%02d'|format(ep.season) }} E{{ '%02d'|format(ep.episode) }}</span>
+            <span class="sv-ep-name">{{ ep.name }}</span>
+            <i class="bi bi-play-circle sv-ep-play"></i>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

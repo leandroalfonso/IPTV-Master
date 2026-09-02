@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Assistir · {{ item.name }} · StreamVault{% endblock %}
+{% block head %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+{# Google Cast SDK (sender) — necessário para o botão de transmitir para TV #}
+<script>
+window.__onGCastApiAvailable = function (isAvailable) {
+  window.SV_CAST_AVAILABLE = isAvailable;
+  window.dispatchEvent(new CustomEvent("sv-cast-ready", { detail: isAvailable }));
+};
+</script>
+<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js" defer></script>
+{% endblock %}
+{% block content %}
+<div class="sv-player-page">
+    <div class="sv-player-topbar">
+        <a href="javascript:history.back()" class="btn sv-btn-ghost"><i class="bi bi-arrow-left"></i> Voltar</a>
+        <div class="sv-player-title">
+            {% if item.type == 'live' %}<span class="sv-live-badge"><i class="bi bi-record-circle-fill"></i> AO VIVO</span>{% endif %}
+            <strong>{{ item.name }}</strong>
+            {% if item.group_name %}<small class="text-secondary">· {{ item.group_name }}</small>{% endif %}
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn sv-btn-ghost sv-prev" aria-label="Conteúdo anterior" title="Anterior" {% if not prev_id %}disabled{% endif %}><i class="bi bi-skip-backward-fill"></i></button>
+            <button class="btn sv-btn-ghost sv-next" aria-label="Próximo conteúdo" title="Próximo" {% if not next_id %}disabled{% endif %}><i class="bi bi-skip-forward-fill"></i></button>
+            <button class="btn sv-btn-ghost sv-cinema-toggle" type="button" aria-label="Modo cinema" title="Modo cinema"><i class="bi bi-aspect-ratio"></i></button>
+            {% if item.type != 'live' %}
+            <button class="btn sv-btn-ghost sv-fav" data-id="{{ item.id }}" data-type="{{ item.type }}" data-name="{{ item.name }}" data-logo="{{ item.logo }}" data-url="{{ item.url }}">
+                <i class="bi bi-plus-lg"></i> Lista
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="sv-player-wrap">
+        <video id="svVideo" class="sv-video" playsinline
+               {% if item.type != 'live' and start %}data-start="{{ start }}"{% endif %}
+               poster="{{ item.logo or '' }}"></video>
+
+        <!-- Controles customizados -->
+        <div class="sv-controls" id="svControls">
+            <button class="sv-ctrl sv-playpause" aria-label="Play/Pause"><i class="bi bi-play-fill"></i></button>
+            <div class="sv-ctrl-mid">
+                <input type="range" class="sv-seek" id="svSeek" value="0" max="100" step="0.1" {% if item.type == 'live' %}disabled{% endif %}>
+                <span class="sv-time" id="svTime"></span>
+            </div>
+            <button class="sv-ctrl sv-mute" aria-label="Mudo"><i class="bi bi-volume-up-fill"></i></button>
+            <button class="sv-ctrl sv-pip" aria-label="Picture-in-Picture"><i class="bi bi-pip"></i></button>
+            <button class="sv-ctrl sv-cast" id="svCastBtn" aria-label="Transmitir para TV" title="Transmitir para TV" style="display:none"><i class="bi bi-cast"></i></button>
+            <button class="sv-ctrl sv-full" aria-label="Tela cheia"><i class="bi bi-arrows-fullscreen"></i></button>
+        </div>
+
+        <div id="svPlayerMsg" class="sv-player-msg d-none"></div>
+        <div id="svSpinner" class="sv-spinner"><div class="spinner-border text-accent" role="status"></div></div>
+    </div>
+
+    <div class="sv-player-meta container-fluid px-3 px-lg-4">
+        <h4>{{ item.name }}</h4>
+        <p class="text-secondary">{{ item.category }}{% if item.group_name %} · {{ item.group_name }}{% endif %}</p>
+        {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+<script>
+window.SV_STREAM = {
+    url: {{ item.url | tojson }},
+    streamUrl: {{ ("/proxy/stream/" + item.id) | tojson }},
+    isHls: {% if item.type == 'live' or (item.url | lower).endswith('.m3u8') %}true{% else %}false{% endif %},
+    type: {{ item.type | tojson }},
+    id: {{ item.id | tojson }},
+    name: {{ item.name | tojson }},
+    logo: {{ item.logo | tojson }},
+    start: {{ start | tojson }},
+    prevId: {% if prev_id %}{{ prev_id | tojson }}{% else %}null{% endif %},
+    nextId: {% if next_id %}{{ next_id | tojson }}{% else %}null{% endif %}
+};
+window.SV_CAST_MEDIA = {
+    url: {{ ("/proxy/stream/" + item.id) | tojson }},
+    contentType: {% if item.type == 'live' or (item.url | lower).endswith('.m3u8') %}"application/vnd.apple.mpegurl"{% else %}"video/mp4"{% endif %},
+    title: {{ item.name | tojson }},
+    poster: {{ item.logo | tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/player.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cast.js') }}"></script>
+{% endblock %}
