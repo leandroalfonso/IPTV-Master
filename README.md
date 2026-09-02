@@ -160,3 +160,4 @@ streamvault/
 ## Licença
 
 Uso pessoal.
+# IPTV-Master
