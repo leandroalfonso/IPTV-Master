@@ -469,7 +469,8 @@ body.sv-cinema-mode .sv-player-page {
     opacity: 0; transition: opacity .25s; pointer-events: none;
 }
 .sv-player-wrap:hover .sv-controls,
-.sv-controls:focus-within { opacity: 1; pointer-events: auto; }
+.sv-controls:focus-within,
+.sv-controls.sv-controls-show { opacity: 1; pointer-events: auto; }
 .sv-ctrl {
     background: rgba(255,255,255,.12); border: none; color: #fff;
     width: 44px; height: 44px; border-radius: 50%; font-size: 1.2rem;
@@ -594,4 +595,58 @@ body.sv-cinema-mode .sv-player-page {
     .sv-hero-body { padding: 80px 80px 100px; }
     .sv-hero-title { font-size: 4.8rem; }
     body { padding-left: 2vw; padding-right: 2vw; }
+}
+
+/* =========================================================
+   Mobile (toque) — player, header, busca e hero
+   ========================================================= */
+@media (max-width: 768px) {
+    /* Player: video ocupa a area visivel sem estourar a tela */
+    .sv-video { max-height: calc(100dvh - 120px); }
+    .sv-player-topbar { padding: 8px 10px; gap: 8px; }
+    .sv-player-topbar .btn { padding: 6px 10px; font-size: .85rem; }
+    .sv-player-topbar .sv-btn-ghost i { font-size: 1.05rem; }
+    .sv-player-title { font-size: .9rem; min-width: 0; }
+    .sv-player-title strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sv-player-title small { display: none; }
+    .sv-player-meta { padding: 14px; }
+
+    /* Controles: barra compacta com toque confortavel */
+    .sv-controls { padding: 10px 10px 14px; gap: 8px; }
+    .sv-ctrl { width: 42px; height: 42px; flex: 0 0 auto; }
+    .sv-pip, .sv-cast { display: none; } /* PiP/Cast sao frageis em mobile; barra nativa cobre */
+
+    /* Header: busca nao espreme a marca */
+    .sv-navbar > .container-fluid { gap: 8px; }
+    .sv-brand { font-size: 1.1rem; white-space: nowrap; }
+    .sv-search { flex: 1; min-width: 0; }
+    .sv-search .input-group { width: 100%; }
+    .sv-search .form-control { min-width: 0; width: 100%; }
+    .sv-navbar .sv-profile-btn { display: none; } /* atalho duplicado no offcanvas */
+
+    /* Resultados da busca cabem na tela */
+    .sv-search-results { padding: 12px; max-height: 60dvh; }
+
+    /* Hero: altura proporcional; margens negativas zeradas — o body ja tem
+       padding lateral e a soma (margem -16 + padding 16) estourava o viewport
+       em 16px de scroll horizontal. */
+    .sv-hero { min-height: 320px; margin-left: 0; margin-right: 0; }
+    .sv-hero-body { padding: 18px 18px 26px; }
+
+    /* Carrossel com scroll suave por gesto */
+    .sv-carousel { -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+}
+
+/* Telas muito estreitas (<=400px): prioridade ao video */
+@media (max-width: 400px) {
+    .sv-player-topbar .sv-prev, .sv-player-topbar .sv-next { display: none; }
+    .sv-ctrl { width: 40px; height: 40px; font-size: 1.05rem; }
+    .sv-brand span, .sv-brand { font-size: 1rem; }
+}
+
+/* Sem hover real (toque): cards nao dependem de overlay em hover */
+@media (hover: none) {
+    .sv-card:hover { transform: none; box-shadow: none; filter: none; }
+    .sv-card:active { transform: scale(.97); }
+    .sv-ctrl:hover { transform: none; }
 }

@@ -183,8 +183,21 @@
             } catch (e) { log("PiP indisponível:", e.message); }
         });
         btnFull && btnFull.addEventListener("click", () => {
-            if (!document.fullscreenElement) video.requestFullscreen?.();
-            else document.exitFullscreen?.();
+            const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+            if (fsEl) {
+                const exit = document.exitFullscreen || document.webkitExitFullscreen;
+                exit && exit.call(document);
+                return;
+            }
+            // iPhone Safari nao expoe requestFullscreen no <video>: cai para o
+            // fullscreen nativo (webkitEnterFullscreen) e, sem nenhum deles,
+            // habilita os controles nativos como ultimo recurso.
+            const req = video.requestFullscreen || video.webkitRequestFullscreen || video.webkitEnterFullscreen;
+            if (!req) { video.controls = true; return; }
+            try {
+                const p = req.call(video);
+                if (p && typeof p.catch === "function") p.catch(() => { video.controls = true; });
+            } catch (e) { video.controls = true; }
         });
         seek && seek.addEventListener("input", () => {
             if (video.duration) video.currentTime = (seek.value / 100) * video.duration;
@@ -213,6 +226,40 @@
             if (msg.dataset.kind !== "info") return;
             video.play().catch(() => {});
         });
+    }
+
+    /* ---------- mobile: toque no video mostra/esconde a barra de controles ----------
+       Em tela de toque nao existe :hover, entao a barra (opacity:0 por padrao) nunca
+       aparecia. Um toque simples alterna a visibilidade; tocar 2x alterna o play. */
+    const wrap = document.querySelector(".sv-player-wrap");
+    const isTouch = window.matchMedia("(hover: none)").matches;
+    let hideTimer = null;
+    function showControls(autoHide = true) {
+        if (!controls) return;
+        controls.classList.add("sv-controls-show");
+        clearTimeout(hideTimer);
+        if (autoHide) hideTimer = setTimeout(() => {
+            if (!video.paused) controls.classList.remove("sv-controls-show");
+        }, 3500);
+    }
+    if (isTouch && wrap && controls) {
+        let lastTap = 0;
+        wrap.addEventListener("click", (e) => {
+            // ignora toques nos proprios controles e no overlay de mensagem
+            if (e.target.closest(".sv-controls") || e.target.closest(".sv-player-msg")) return;
+            const now = Date.now();
+            if (now - lastTap < 300) {
+                video.paused ? video.play().catch(() => {}) : video.pause();
+                clearTimeout(hideTimer);
+            } else {
+                controls.classList.contains("sv-controls-show")
+                    ? controls.classList.remove("sv-controls-show")
+                    : showControls();
+            }
+            lastTap = now;
+        });
+        video.addEventListener("play", () => showControls());
+        video.addEventListener("pause", () => showControls(false));
     }
 
     /* ---------- atalhos de teclado ---------- */
