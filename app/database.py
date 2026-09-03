@@ -403,9 +403,11 @@ def get_recently_added(typ: str = None, limit: int = 20) -> list:
     """
     conn = get_db()
     cur = conn.cursor()
+    # rowid é coluna oculta do SQLite e não aparece em SELECT *;
+    # expomos como ingest_order para poder ordenar na consulta externa.
     q = (
         "SELECT * FROM ("
-        "  SELECT *, ROW_NUMBER() OVER ("
+        "  SELECT rowid AS ingest_order, *, ROW_NUMBER() OVER ("
         "    PARTITION BY COALESCE(series_name, name) ORDER BY rowid DESC"
         "  ) AS rn FROM contents"
     )
@@ -413,7 +415,7 @@ def get_recently_added(typ: str = None, limit: int = 20) -> list:
     if typ:
         q += " WHERE type = ?"
         params.append(typ)
-    q += ") WHERE rn = 1 ORDER BY rowid DESC LIMIT ?"
+    q += ") WHERE rn = 1 ORDER BY ingest_order DESC LIMIT ?"
     params.append(limit)
     cur.execute(q, params)
     rows = [dict(r) for r in cur.fetchall()]
