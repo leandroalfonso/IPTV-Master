@@ -26,7 +26,10 @@
     /* ---------- helpers de UI ---------- */
     function showMsg(text, icon = "bi-exclamation-triangle", kind = "error") {
         if (!msg) return;
-        msg.className = "sv-player-msg d-block";
+        // Mantém a classe base (display:flex do CSS centraliza o conteúdo);
+        // esconder é só voltar com d-none. Antes "d-block" quebrava o centering.
+        msg.className = "sv-player-msg";
+        msg.dataset.kind = kind;
         msg.innerHTML = `<div class="sv-msg-icon"><i class="bi ${icon}"></i></div><div>${text}</div>`;
     }
     function showRetryBtn(label, href) {
@@ -35,7 +38,7 @@
         a.className = "btn sv-btn-primary"; a.textContent = label; a.href = href;
         msg.appendChild(a);
     }
-    function hideMsg() { if (msg) msg.classList.add("d-none"); }
+    function hideMsg() { if (msg) { msg.classList.add("d-none"); msg.innerHTML = ""; } }
     function showSpinner() { if (spinner) spinner.style.display = "flex"; }
     function hideSpinner() { if (spinner) spinner.style.display = "none"; }
 
@@ -189,10 +192,27 @@
         video.addEventListener("play", syncPlayIcon);
         video.addEventListener("pause", syncPlayIcon);
         video.addEventListener("timeupdate", updateSeek);
+        // A mensagem de "autoplay bloqueado" e o spinner devem sumir assim que o
+        // video realmente comeca a renderizar quadros — antes ela ficava fixa para
+        // sempre sobre o player, mesmo apos o play funcionar.
+        video.addEventListener("playing", () => {
+            hideSpinner();
+            if (msg && msg.dataset.kind === "info") hideMsg();
+        });
         syncPlayIcon();
 
         if (btnPrev && cfg.prevId) btnPrev.onclick = () => { window.location.href = "/assistir/" + cfg.prevId; };
         if (btnNext && cfg.nextId) btnNext.onclick = () => { window.location.href = "/assistir/" + cfg.nextId; };
+    }
+
+    /* ---------- overlay de mensagem: clique inicia a reproducao ---------- */
+    if (msg) {
+        msg.addEventListener("click", (e) => {
+            // Nao interceptar o botao "Tentar novamente" das mensagens de erro.
+            if (e.target.closest("a")) return;
+            if (msg.dataset.kind !== "info") return;
+            video.play().catch(() => {});
+        });
     }
 
     /* ---------- atalhos de teclado ---------- */

@@ -454,7 +454,9 @@ body.sv-cinema-mode .sv-player-page {
 .sv-player-msg {
     position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 14px; text-align: center; padding: 20px; background: rgba(0,0,0,.88); color: var(--text-secondary);
+    z-index: 7; /* abaixo dos controles (z-8) para nao bloquear a barra */
 }
+.sv-player-msg[data-kind="info"] { cursor: pointer; }
 .sv-player-msg .sv-msg-icon { font-size: 2.4rem; color: var(--accent); }
 .sv-player-msg a { margin-top: 6px; }
 .sv-player-meta { padding: 18px; }
