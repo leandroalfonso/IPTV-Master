@@ -40,11 +40,22 @@ def _get(path: str, params: dict) -> dict:
 
 
 def _clean_title(title: str) -> str:
-    """Remove sufixos de qualidade comuns ao nome do filme na lista IPTV."""
+    """Remove ruídos comuns de nomes em listas IPTV para o TMDB conseguir
+    casar: prefixos entre colchetes/parênteses ("[24H]", "(DUB)", "[FULL]"),
+    sufixos de qualidade e marcadores de idioma."""
+    import re
+
     clean = (title or "").strip()
-    for suf in ("HD+", "HD", "UHD", "4K", "FULL HD", "BLURAY", "REMUX"):
-        if clean.upper().endswith(suf):
-            clean = clean[: -len(suf)].strip()
+    # prefixos tipo [24H], (DUB), [LEG], {4K}
+    clean = re.sub(r"^[\[\(\{][^\]\)\}]*[\]\)\}]\s*", "", clean)
+    # sufixos repetidos de qualidade/idioma no fim: "HD+", "4K LEG", "(DUB)"
+    pat = (r"(?:[\s\-\|]+(?:HD\+?|FHD|UHD|4K|FULL\s*HD|BLURAY|BLU-?RAY|REMUX|SD|HD|"
+           r"DUB(LADO)?|LEG(ENDADO)?|NAC|PT-?BR|EN|ESP)(?![-\w])"
+           r"|[\s\-\|]*[\[\(\{](?:DUB(LADO)?|LEG(ENDADO)?|NAC|FULL\s*HD|HD|4K|FULL)[\]\)\}])\s*$")
+    prev = None
+    while prev != clean:
+        prev = clean
+        clean = re.sub(pat, "", clean, flags=re.IGNORECASE).strip()
     return clean
 
 
@@ -153,5 +164,82 @@ def hydrate(items: list[dict]) -> list[dict]:
             if mins:
                 d["duration"] = f"{mins // 60}h{mins % 60:02d}"
             d["description"] = tm.get("overview") or d.get("description") or ""
+            # Pôster TMDB quando o logo da lista IPTV não existe (a maioria dos
+            # filmes VOD não traz imagem) — card ganha arte real.
+            if tm.get("poster") and not d.get("logo"):
+                d["logo"] = tm["poster"]
+            d["genres"] = tm.get("genres") or d.get("genres") or []
         out.append(d)
     return out
+
+
+def enrich_pending(batch: int = 200, delay: float = 0.12, max_rounds: int = 0) -> int:
+    """Enriquece filmes ainda sem metadata TMDB, em lotes (para rodar em
+    background no boot, sem travar requests).
+
+    - Busca apenas linhas type='movie' com metadata vazio/'{}'.
+    - Sem match na API, grava {"tmdb_try": ts} para não re-tentar a cada rodada.
+    - delay entre filmes mantém ~6 req/s (limite TMDB é 50/s).
+    Retorna o total enriquecido (para logs/testes).
+    """
+    import sqlite3
+
+    total = 0
+    rounds = 0
+    while True:
+        conn = database.get_db()
+        try:
+            rows = conn.execute(
+                "SELECT id, name, type FROM contents "
+                "WHERE type='movie' AND (metadata IS NULL OR metadata='{}') "
+                "ORDER BY rowid LIMIT ?",
+                (batch,),
+            ).fetchall()
+        finally:
+            conn.close()
+        if not rows:
+            return total
+        for cid, name, typ in rows:
+            item = {"id": cid, "name": name, "type": typ}
+            try:
+                found = _fetch_tmdb(item)
+            except Exception as exc:
+                logger.warning("TMDB enrich falhou para %r: %s", name, exc)
+                found = None
+            if found:
+                database.set_metadata(cid, {"tmdb": found, "_ts": found["_fetched"]})
+                total += 1
+            else:
+                database.set_metadata(cid, {"tmdb_try": time.time()})
+            time.sleep(delay)
+        rounds += 1
+        if max_rounds and rounds >= max_rounds:
+            return total
+
+
+def start_enrich_worker() -> None:
+    """Dispara o enriquecimento em thread daemon (chamado no boot do app)."""
+    import threading
+
+    if not is_enabled():
+        return
+    conn = database.get_db()
+    try:
+        pending = conn.execute(
+            "SELECT COUNT(*) FROM contents "
+            "WHERE type='movie' AND (metadata IS NULL OR metadata='{}')"
+        ).fetchone()[0]
+    finally:
+        conn.close()
+    if not pending:
+        return
+
+    def _run():
+        try:
+            n = enrich_pending()
+            logger.info("TMDB enrich worker: %d filmes enriquecidos", n)
+        except Exception as exc:
+            logger.warning("TMDB enrich worker abortou: %s", exc)
+
+    t = threading.Thread(target=_run, name="tmdb-enrich", daemon=True)
+    t.start()

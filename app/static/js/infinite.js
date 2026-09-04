@@ -20,6 +20,13 @@
         return `<img loading="lazy" src="/proxy/image?u=${encodeURIComponent(logo)}" alt="${esc(alt)}" referrerpolicy="no-referrer" onerror="this.style.display='none'">`;
     }
 
+    // Metadado do card de filme: ano · gênero · nota (TMDB quando disponível,
+    // senão a categoria da lista IPTV). Espelha o macro movie_card do template.
+    function movieMeta(m) {
+        const genre = (m.genres && m.genres[0]) || m.category || "";
+        return [m.year, genre, m.rating ? "★ " + m.rating : ""].filter(Boolean).join(" · ");
+    }
+
     function liveCard(c) {
         return `<div class="col-6 col-sm-4 col-md-3 col-lg-2 sv-col" data-cat="${esc(c.category)}">
             <div class="sv-card" data-id="${esc(c.id)}">
@@ -52,7 +59,7 @@
                         </div>
                     </div>
                     <div class="sv-card-title">${esc(m.name)}</div>
-                    <div class="sv-card-sub">${esc(m.category)}</div>
+                    <div class="sv-card-sub">${esc(movieMeta(m))}</div>
                 </a>
             </div>
         </div>`;

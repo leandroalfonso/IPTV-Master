@@ -326,6 +326,7 @@ def api_contents():
     res = database.query_contents(
         typ=typ, category=category, q=q, page=page, limit=limit, sort=sort
     )
+    res["items"] = tmdb.hydrate(res["items"])
     return jsonify(res)
 
 
@@ -348,6 +349,7 @@ def api_movies():
     res = database.query_contents(
         typ="movie", category=category, q=q, page=page, limit=limit
     )
+    res["items"] = tmdb.hydrate(res["items"])
     return jsonify(res)
 
 

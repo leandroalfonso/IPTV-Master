@@ -34,6 +34,11 @@ def create_app() -> Flask:
     # vazio; depois apenas agenda atualização em background quando expirado).
     routes.ensure_loaded()
 
+    # Enriquecimento TMDB em background: filmes sem metadata ganham sinopse,
+    # nota, ano e pôster real sem travar nenhuma request do usuário.
+    from . import tmdb as _tmdb
+    _tmdb.start_enrich_worker()
+
     # Favicon (evita 404 e loop em alguns proxies que re-testam o ícone).
     @app.route("/favicon.ico")
     def favicon():

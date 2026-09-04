@@ -256,6 +256,21 @@ def load_from_m3u(force: bool = False) -> dict:
     text = _fetch_m3u_text()
     items = parse_m3u(text)
 
+    # Snapshot do metadata TMDB já gravado: os IDs são hash determinístico de
+    # nome+url, então sobrevivem ao refresh. Sem isso, cada recarga da lista
+    # (a cada IPTV_CACHE_MINUTES) apagaria toda a sinopse/nota/pôster.
+    _meta_conn = database.get_db()
+    try:
+        _saved_meta = {
+            r[0]: r[1]
+            for r in _meta_conn.execute(
+                "SELECT id, metadata FROM contents "
+                "WHERE metadata IS NOT NULL AND metadata != '{}'"
+            ).fetchall()
+        }
+    finally:
+        _meta_conn.close()
+
     # Limpa e reinsere.
     database.clear_contents()
     conn = database.get_db()
@@ -263,14 +278,20 @@ def load_from_m3u(force: bool = False) -> dict:
     cats = set()
     for it in items:
         now = getattr(it, "_now", None)
+        row = list(it.to_row(now or __import__("datetime").datetime.now(
+            __import__("datetime").timezone.utc
+        ).isoformat()))
+        # posição do campo metadata na tupla: id,name,type,url,logo,category,
+        # group_name,description,metadata -> índice 8
+        old = _saved_meta.get(row[0])
+        if old:
+            row[8] = old
         cur.execute(
             "INSERT OR REPLACE INTO contents "
             "(id, name, type, url, logo, category, group_name, description, "
             "metadata, series_name, season, episode, created_at, updated_at) "
             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            it.to_row(now or __import__("datetime").datetime.now(
-                __import__("datetime").timezone.utc
-            ).isoformat()),
+            row,
         )
         cats.add((it.category, it.type))
     for name, typ in cats:

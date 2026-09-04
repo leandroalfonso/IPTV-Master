@@ -33,7 +33,8 @@
                         </div>
                     </div>
                     <div class="sv-card-title">{{ m.name }}</div>
-                    <div class="sv-card-sub">{{ m.category }}</div>
+                    {%- set meta = [m.year, ((m.genres or [])[0] if m.genres else m.category), ('★ ' ~ m.rating) if m.rating else ''] | select | list -%}
+                    <div class="sv-card-sub">{{ meta | join(' · ') }}</div>
                 </a>
             </div>
         </div>

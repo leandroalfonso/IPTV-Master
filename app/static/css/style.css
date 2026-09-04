@@ -616,16 +616,22 @@ body.sv-cinema-mode .sv-player-page {
     .sv-ctrl { width: 42px; height: 42px; flex: 0 0 auto; }
     .sv-pip, .sv-cast { display: none; } /* PiP/Cast sao frageis em mobile; barra nativa cobre */
 
-    /* Header: busca nao espreme a marca */
-    .sv-navbar > .container-fluid { gap: 8px; }
+    /* Header mobile em DUAS LINHAS (padrao de app de streaming):
+       linha 1 = menu + marca + icone de tema; linha 2 = busca em largura total.
+       Antes a busca ficava espremida entre 4 icones na mesma linha.
+       Especificidade: a regra base usa .sv-navbar.navbar (0-2-1) com !important;
+       o seletor aqui precisa do .navbar tambem para vencer o wrap. */
+    .sv-navbar.navbar { height: auto; padding-bottom: 8px; }
+    .sv-navbar.navbar > .container-fluid { gap: 6px 8px; flex-wrap: wrap !important; }
     .sv-brand { font-size: 1.1rem; white-space: nowrap; }
-    .sv-search { flex: 1; min-width: 0; }
-    .sv-search .input-group { width: 100%; }
-    .sv-search .form-control { min-width: 0; width: 100%; }
+    .sv-nav-actions { margin-left: auto; }
+    .sv-search { flex: 1 1 100%; order: 3; min-width: 0; }
+    .sv-search .input-group { width: 100%; flex-wrap: nowrap; }
+    .sv-search .form-control { min-width: 0; flex: 1 1 auto; width: 1%; }
     .sv-navbar .sv-profile-btn { display: none; } /* atalho duplicado no offcanvas */
 
-    /* Resultados da busca cabem na tela */
-    .sv-search-results { padding: 12px; max-height: 60dvh; }
+    /* Resultados da busca: abaixo do header de duas linhas (~111px), cabem na tela */
+    .sv-search-results { top: 112px; padding: 12px; max-height: 60dvh; }
 
     /* Hero: altura proporcional; margens negativas zeradas — o body ja tem
        padding lateral e a soma (margem -16 + padding 16) estourava o viewport
@@ -647,12 +653,25 @@ body.sv-cinema-mode .sv-player-page {
     .sv-thumb { border-radius: 10px; }
     .sv-thumb-fallback { font-size: 1.6rem; }
 
-    /* Overlay do card no grid: play pequeno, centralizado, dentro da thumb */
-    .sv-card-overlay { padding: 8px; gap: 6px; border-radius: 10px; align-items: center;
-        background: linear-gradient(0deg, rgba(0,0,0,.78) 0%, rgba(0,0,0,.25) 55%, transparent 100%); }
-    .sv-card-overlay .sv-ov-actions { justify-content: center; gap: 8px; }
-    .sv-play-btn { width: 38px; height: 38px; font-size: 1.05rem; box-shadow: 0 2px 10px rgba(0,0,0,.45); }
-    .sv-fav-btn { width: 34px; height: 34px; font-size: .95rem; }
+    /* Titulo redundante: em POSTERS (filmes/series) a propria arte ja traz o
+       nome escrito — a legenda embaixo repetia (e as vezes divergia: poster
+       "10 ANOS DEPOIS" vs legenda "O ANOS DEPOIS"). Quando o poster carrega,
+       oculta so o TITULO; a linha de meta (ano · genero · nota) fica.
+       Sem poster (logo falhou / sem imagem) o titulo permanece.
+       :has() e ignorado em navegadores antigos => degrada na exibicao atual. */
+    .sv-card:has(.sv-thumb:not(.sv-thumb-live) img:not([style*="display: none"]))
+        .sv-thumb:not(.sv-thumb-live) ~ .sv-card-title { display: none; }
+
+    /* Overlay do card no grid: play pequeno no canto inferior direito,
+       sem gradiente cobrindo a arte (padrao Prime Video mobile).
+       padding 9px > raio 10px do thumb => o circulo nao encosta no canto arredondado. */
+    .sv-card-overlay { padding: 9px; border-radius: 10px; background: none;
+        justify-content: flex-end; align-items: flex-end; }
+    .sv-card-overlay .sv-ov-actions { justify-content: flex-end; gap: 6px; }
+    .sv-play-btn { width: 30px; height: 30px; font-size: .95rem;
+        box-shadow: 0 1px 6px rgba(0,0,0,.5); opacity: .92; }
+    .sv-play-btn i { font-size: 1.05rem; }
+    .sv-fav-btn { width: 28px; height: 28px; font-size: .85rem; }
     .sv-live-badge { top: 6px; left: 6px; font-size: .58rem; padding: 3px 7px; gap: 3px; }
     .sv-live-badge i { font-size: .62rem; }
 
