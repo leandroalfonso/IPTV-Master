@@ -294,7 +294,14 @@
                 }),
             }).catch(() => {});
         };
-        video.addEventListener("timeupdate", () => { clearTimeout(saveTimer); saveTimer = setTimeout(saveProgress, 5000); });
+        // timeupdate dispara a cada ~250ms: com setTimeout+clear dentro do
+        // handler o timer NUNCA chegava a disparar (debounce invertido) e o
+        // historico nunca era salvo. O certo e throttle: agenda UMA vez e
+        // so agenda de novo depois de gravar.
+        video.addEventListener("timeupdate", () => {
+            if (saveTimer) return;
+            saveTimer = setTimeout(() => { saveTimer = null; saveProgress(); }, 5000);
+        });
         video.addEventListener("pause", saveProgress);
         video.addEventListener("ended", () => {
             fetch("/api/history", {
