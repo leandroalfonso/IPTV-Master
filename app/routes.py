@@ -232,9 +232,13 @@ def assistir(content_id):
     # Navegação anterior/próximo no player.
     prev_id, next_id = _neighbor_ids(item, content_id)
 
+    # Enriquecimento TMDB (somente filmes): nota/sinopse no player.
+    tmdb_meta = tmdb.get_tmdb(item) if item["type"] == "movie" else None
+
     return render_template(
         "assistir.html", item=item, start=start,
         prev_id=prev_id, next_id=next_id,
+        tmdb_meta=tmdb_meta,
         configured=iptv.is_configured(),
     )
 

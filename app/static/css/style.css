@@ -42,7 +42,22 @@
     --shadow-lg: 0 20px 40px rgba(17,24,39,.18);
 }
 
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+}
+*::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-track {
+    background: transparent !important;
+    border: none !important;
+}
 html, body { margin: 0; padding: 0; }
 body {
     background: var(--background);
@@ -50,6 +65,7 @@ body {
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
+    overflow-x: hidden;
     padding-bottom: 40px;
     transition: background .2s ease, color .2s ease;
 }
@@ -203,6 +219,7 @@ a { text-decoration: none; color: inherit; }
     display: inline-block; background: var(--accent); color: #fff;
     font-size: 0.8rem; font-weight: 800; padding: 6px 14px; border-radius: 24px;
     letter-spacing: 0.6px; text-transform: uppercase; box-shadow: 0 4px 16px var(--accent-glow);
+    pointer-events: none;
 }
 
 /* ---------------- Seções ---------------- */
@@ -226,9 +243,10 @@ a { text-decoration: none; color: inherit; }
 .sv-row {
     display: flex; gap: 18px; overflow-x: auto; padding: 8px 2px 18px;
     scroll-snap-type: x mandatory; scroll-behavior: smooth;
-    scrollbar-width: none; -ms-overflow-style: none;
+    scrollbar-width: none !important; -ms-overflow-style: none;
+    scrollbar-color: transparent transparent;
 }
-.sv-row::-webkit-scrollbar { display: none; }
+.sv-row::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
 .sv-featured-row {
     gap: 16px; padding: 12px 2px 20px;
 }
@@ -309,6 +327,7 @@ body.sv-cinema-mode .sv-player-page {
     display: inline-flex; align-items: center; gap: 5px; z-index: 4;
     box-shadow: 0 0 16px var(--accent-glow);
     animation: svPulse 2s infinite;
+    pointer-events: none;
 }
 @keyframes svPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
 
@@ -317,7 +336,25 @@ body.sv-cinema-mode .sv-player-page {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     letter-spacing: -0.2px;
 }
-.sv-card-sub { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Rating info (abaixo do título) */
+.sv-card-rating-info {
+    display: flex; align-items: center; gap: 6px; margin-top: 6px; margin-bottom: 4px;
+}
+.sv-card-rating-info .sv-star-rating-small {
+    display: flex; gap: 2px;
+}
+.sv-card-rating-info .sv-star-rating-small i {
+    font-size: 0.7rem; color: rgba(255,215,102,.3);
+}
+.sv-card-rating-info .sv-star-rating-small i.active {
+    color: #ffd766;
+}
+.sv-card-rating-info .sv-rating-score {
+    font-size: 0.8rem; font-weight: 700; color: var(--accent);
+}
+
+.sv-card-sub { font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sv-progress {
     position: absolute; bottom: 0; left: 0; height: 5px; background: var(--accent);
     z-index: 3; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
@@ -334,16 +371,33 @@ body.sv-cinema-mode .sv-player-page {
     background: linear-gradient(0deg, rgba(0,0,0,.98) 0%, rgba(0,0,0,.65) 50%, rgba(0,0,0,.1) 100%);
     border-radius: 12px;
     opacity: 0; transition: opacity .3s ease;
-    display: flex; flex-direction: column; justify-content: flex-end;
+    display: flex; flex-direction: column; justify-content: space-between;
     padding: 16px; gap: 10px; z-index: 4;
 }
-.sv-card-overlay .sv-ov-meta { display: flex; align-items: center; gap: 12px; color: var(--text-secondary); font-size: 0.8rem; flex-wrap: wrap; }
+.sv-card-overlay-content {
+    display: flex; flex-direction: column; gap: 10px;
+}
+.sv-card-overlay-actions {
+    display: flex; gap: 10px; align-items: center; justify-content: center;
+}
+.sv-card-overlay .sv-ov-meta { 
+    display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 0.75rem; flex-wrap: wrap;
+}
+.sv-card-overlay .sv-ov-meta .sv-meta-item {
+    display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,.1);
+    padding: 3px 8px; border-radius: 6px; white-space: nowrap;
+}
 .sv-card-overlay .sv-ov-meta .sv-ov-note { color: #ffd166; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; }
-.sv-card-overlay .sv-ov-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.sv-card-overlay .sv-ov-actions { display: flex; gap: 10px; align-items: center; }
+.sv-card-overlay .sv-ov-desc { 
+    font-size: 0.8rem; color: #e0e0e0; line-height: 1.4; margin: 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 .sv-thumb:hover { border-color: rgba(255,255,255,.2); }
 .sv-card:hover .sv-card-overlay { opacity: 1; }
+
+/* Melhorias para cards de filme */
+.sv-movie-card:hover { transform: translateY(-14px) scale(1.08); }
+
 
 .sv-play-btn {
     width: 56px; height: 56px; border-radius: 50%; background: #fff; color: #000;
@@ -351,16 +405,16 @@ body.sv-cinema-mode .sv-player-page {
     transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
     flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,.4);
 }
-.sv-play-btn:hover { background: var(--accent); color: #fff; transform: scale(1.1); box-shadow: 0 6px 20px var(--accent-glow); }
+.sv-play-btn:hover { background: var(--accent); color: #fff; transform: scale(1.15); box-shadow: 0 8px 24px var(--accent-glow); }
 .sv-fav-btn {
-    width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.15);
-    color: #fff; border: 1px solid rgba(255,255,255,.3); font-size: 1.2rem;
+    width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.2);
+    color: #fff; border: 1.5px solid rgba(255,255,255,.4); font-size: 1.1rem;
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
     transition: background .2s ease, border-color .2s ease, transform .2s ease;
     flex-shrink: 0;
 }
-.sv-fav-btn:hover { background: var(--accent); border-color: var(--accent); transform: scale(1.08); }
-.sv-fav-btn.is-fav { background: var(--accent); border-color: var(--accent); }
+.sv-fav-btn:hover { background: rgba(255,255,255,.3); border-color: rgba(255,255,255,.6); transform: scale(1.1); }
+.sv-fav-btn.is-fav { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 /* Skeleton loading */
 .sv-skeleton {
@@ -460,6 +514,26 @@ body.sv-cinema-mode .sv-player-page {
 .sv-player-msg .sv-msg-icon { font-size: 2.4rem; color: var(--accent); }
 .sv-player-msg a { margin-top: 6px; }
 .sv-player-meta { padding: 18px; }
+.sv-player-meta h4 { margin-bottom: 6px; font-weight: 800; }
+.sv-player-meta p { margin-bottom: 10px; }
+
+/* Rating no player */
+.sv-player-rating {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.sv-star-rating-inline {
+    display: flex; gap: 3px;
+}
+.sv-star-rating-inline i {
+    font-size: 0.85rem; color: rgba(255,215,102,.3);
+}
+.sv-star-rating-inline i.active {
+    color: #ffd766;
+}
+.sv-rating-score-inline {
+    font-size: 0.9rem; font-weight: 700; color: var(--accent);
+}
 
 /* Controles customizados */
 .sv-controls {
@@ -548,7 +622,7 @@ body.sv-cinema-mode .sv-player-page {
     .sv-card { width: 150px; }
     .sv-skeleton { width: 150px; }
     .sv-featured-card { width: 240px; min-height: 280px; }
-    .sv-hero { min-height: 440px; border-radius: 0; margin-left: -1rem; margin-right: -1rem; }
+    .sv-hero { min-height: 440px; border-radius: 0; margin: 0 -1rem; }
     .sv-hero-body { padding: 28px 28px 36px; }
     .sv-hero-title { font-size: clamp(1.5rem, 6vw, 2.4rem); }
     .sv-hero-actions { gap: 10px; }
@@ -640,7 +714,15 @@ body.sv-cinema-mode .sv-player-page {
     .sv-hero-body { padding: 18px 18px 26px; }
 
     /* Carrossel com scroll suave por gesto */
-    .sv-carousel { -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+    .sv-carousel {
+        overflow: hidden;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+    .sv-row {
+        margin-bottom: -20px;
+        padding-bottom: 20px;
+    }
 
     /* ===== Cards dos grids (canais/filmes/series/minha-lista): 2 por linha,
        100% da coluna =====
@@ -667,7 +749,8 @@ body.sv-cinema-mode .sv-player-page {
        padding 9px > raio 10px do thumb => o circulo nao encosta no canto arredondado. */
     .sv-card-overlay { padding: 9px; border-radius: 10px; background: none;
         justify-content: flex-end; align-items: flex-end; }
-    .sv-card-overlay .sv-ov-actions { justify-content: flex-end; gap: 6px; }
+    .sv-card-overlay .sv-ov-actions,
+    .sv-card-overlay .sv-card-overlay-actions { justify-content: flex-end; gap: 6px; }
     .sv-play-btn { width: 30px; height: 30px; font-size: .95rem;
         box-shadow: 0 1px 6px rgba(0,0,0,.5); opacity: .92; }
     .sv-play-btn i { font-size: 1.05rem; }
@@ -676,10 +759,11 @@ body.sv-cinema-mode .sv-player-page {
     .sv-live-badge i { font-size: .62rem; }
 
     /* Chips de categoria: uma linha rolavel (63 categorias empilhavam ~1200px) */
-    .sv-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    .sv-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none !important;
         -ms-overflow-style: none; -webkit-overflow-scrolling: touch;
+        scrollbar-color: transparent transparent;
         padding-bottom: 4px; margin-bottom: 12px; }
-    .sv-chips::-webkit-scrollbar { display: none; }
+    .sv-chips::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
     .sv-chip { flex: 0 0 auto; padding: 6px 13px; font-size: .78rem; }
 
     /* Overlay sempre visivel no mobile: mostra SO as acoes (play/fav).

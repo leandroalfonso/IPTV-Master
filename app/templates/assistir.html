@@ -57,7 +57,25 @@ window.__onGCastApiAvailable = function (isAvailable) {
     <div class="sv-player-meta container-fluid px-3 px-lg-4">
         <h4>{{ item.name }}</h4>
         <p class="text-secondary">{{ item.category }}{% if item.group_name %} · {{ item.group_name }}{% endif %}</p>
-        {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+        
+        {%- if tmdb_meta and tmdb_meta.rating %}
+        <div class="sv-player-rating">
+            <div class="sv-star-rating-inline">
+                {%- set stars = (tmdb_meta.rating / 2) | round | int -%}
+                {%- for i in range(5) -%}
+                <i class="bi bi-star-fill {%- if i < stars %} active{%- endif %}"></i>
+                {%- endfor -%}
+            </div>
+            <span class="sv-rating-score-inline">{{ "%.1f"|format(tmdb_meta.rating) }} / 10</span>
+            {%- if tmdb_meta.vote_count %}<span class="text-secondary">({{ tmdb_meta.vote_count }} avaliações)</span>{% endif -%}
+        </div>
+        {% endif -%}
+        
+        {%- if tmdb_meta and tmdb_meta.overview %}
+        <p>{{ tmdb_meta.overview }}</p>
+        {%- elif item.description %}
+        <p>{{ item.description }}</p>
+        {%- endif %}
     </div>
 </div>
 {% endblock %}

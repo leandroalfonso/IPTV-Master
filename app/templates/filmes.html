@@ -22,18 +22,46 @@
     <div class="row g-3" id="movieGrid">
         {% for m in items %}
         <div class="col-6 col-sm-4 col-md-3 col-lg-2 sv-col" data-cat="{{ m.category }}">
-            <div class="sv-card" data-id="{{ m.id }}">
+            <div class="sv-card sv-movie-card" data-id="{{ m.id }}">
                 <a href="/detalhes/{{ m.id }}" class="sv-card-link">
                     <div class="sv-thumb">
                         {{ sv_img(m.logo, m.name) }}
                         <div class="sv-thumb-fallback"><i class="bi bi-film"></i></div>
+                        
                         <div class="sv-card-overlay">
-                            <a href="/assistir/{{ m.id }}" class="sv-play-btn"><i class="bi bi-play-fill"></i></a>
-                            <button class="sv-fav-btn sv-fav" data-id="{{ m.id }}" data-type="movie" data-name="{{ m.name }}" data-logo="{{ m.logo }}" data-url="{{ m.url }}"><i class="bi bi-plus"></i></button>
+                            <div class="sv-card-overlay-content">
+                                {%- if m.description or m.overview %}
+                                <p class="sv-ov-desc">{{ (m.description or m.overview)[:140] }}...</p>
+                                {% endif -%}
+                                
+                                <div class="sv-ov-meta">
+                                    {%- if m.year %}<span class="sv-meta-item"><i class="bi bi-calendar"></i> {{ m.year }}</span>{% endif -%}
+                                    {%- if m.duration %}<span class="sv-meta-item"><i class="bi bi-clock"></i> {{ m.duration }}</span>{% elif m.runtime %}<span class="sv-meta-item"><i class="bi bi-clock"></i> {{ (m.runtime // 60) | int }}h{{ '%02d' | format(m.runtime % 60) }}</span>{% endif -%}
+                                    {%- if (m.genres or []) | length %}<span class="sv-meta-item"><i class="bi bi-tag"></i> {{ (m.genres or [])[0] }}</span>{% endif -%}
+                                </div>
+                            </div>
+                            
+                            <div class="sv-card-overlay-actions">
+                                <a href="/assistir/{{ m.id }}" class="sv-play-btn" title="Assistir"><i class="bi bi-play-fill"></i></a>
+                                <button class="sv-fav-btn sv-fav" data-id="{{ m.id }}" data-type="movie" data-name="{{ m.name }}" data-logo="{{ m.logo }}" data-url="{{ m.url }}" title="Minha lista"><i class="bi bi-plus"></i></button>
+                            </div>
                         </div>
                     </div>
                     <div class="sv-card-title">{{ m.name }}</div>
-                    {%- set meta = [m.year, ((m.genres or [])[0] if m.genres else m.category), ('★ ' ~ m.rating) if m.rating else ''] | select | list -%}
+                    
+                    {%- if m.rating %}
+                    <div class="sv-card-rating-info">
+                        <div class="sv-star-rating-small">
+                            {%- set stars = (m.rating / 2) | round | int -%}
+                            {%- for i in range(5) -%}
+                            <i class="bi bi-star-fill {%- if i < stars %} active{%- endif %}"></i>
+                            {%- endfor -%}
+                        </div>
+                        <span class="sv-rating-score">{{ "%.1f"|format(m.rating) }}</span>
+                    </div>
+                    {% endif -%}
+                    
+                    {%- set meta = [(m.genres or [])[0] if m.genres else m.category] | select | list -%}
                     <div class="sv-card-sub">{{ meta | join(' · ') }}</div>
                 </a>
             </div>
