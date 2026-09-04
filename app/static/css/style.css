@@ -635,6 +635,49 @@ body.sv-cinema-mode .sv-player-page {
 
     /* Carrossel com scroll suave por gesto */
     .sv-carousel { -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+
+    /* ===== Cards dos grids (canais/filmes/series/minha-lista): 2 por linha,
+       100% da coluna =====
+       O .sv-card tem width fixo (130px no mobile) herdado dos carrosseis da home;
+       dentro do grid Bootstrap isso deixava o card pequeno e fora de centro.
+       Nos grids (.row > col), o card passa a ocupar a coluna inteira. */
+    .row > div > .sv-card { width: 100%; }
+    .sv-card-title { font-size: .82rem; margin-top: 8px; }
+    .sv-card-sub { font-size: .72rem; margin-top: 2px; }
+    .sv-thumb { border-radius: 10px; }
+    .sv-thumb-fallback { font-size: 1.6rem; }
+
+    /* Overlay do card no grid: play pequeno, centralizado, dentro da thumb */
+    .sv-card-overlay { padding: 8px; gap: 6px; border-radius: 10px; align-items: center;
+        background: linear-gradient(0deg, rgba(0,0,0,.78) 0%, rgba(0,0,0,.25) 55%, transparent 100%); }
+    .sv-card-overlay .sv-ov-actions { justify-content: center; gap: 8px; }
+    .sv-play-btn { width: 38px; height: 38px; font-size: 1.05rem; box-shadow: 0 2px 10px rgba(0,0,0,.45); }
+    .sv-fav-btn { width: 34px; height: 34px; font-size: .95rem; }
+    .sv-live-badge { top: 6px; left: 6px; font-size: .58rem; padding: 3px 7px; gap: 3px; }
+    .sv-live-badge i { font-size: .62rem; }
+
+    /* Chips de categoria: uma linha rolavel (63 categorias empilhavam ~1200px) */
+    .sv-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+        -ms-overflow-style: none; -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px; margin-bottom: 12px; }
+    .sv-chips::-webkit-scrollbar { display: none; }
+    .sv-chip { flex: 0 0 auto; padding: 6px 13px; font-size: .78rem; }
+
+    /* Overlay sempre visivel no mobile: mostra SO as acoes (play/fav).
+       O texto dentro do overlay (titulo/meta/desc) competia com o titulo
+       abaixo do card e repetia o nome ate 3x. */
+    .sv-card-overlay .sv-ov-meta,
+    .sv-card-overlay .sv-ov-desc,
+    .sv-card-overlay .sv-card-title { display: none; }
+
+    /* Header: busca com espaco de sobra — marca vira so o icone,
+       tema vai para tras do menu (o offcanvas mantem configuracoes) */
+    .sv-brand span { display: none; }
+    .sv-brand { font-size: 1.35rem; gap: 0; }
+    .sv-brand i { font-size: 1.5rem; }
+    .sv-navbar > .container-fluid { gap: 6px; }
+    .sv-search .input-group-text { padding: 6px 10px; }
+    .sv-search .form-control { font-size: .85rem; padding: 6px 8px; }
 }
 
 /* Telas muito estreitas (<=400px): prioridade ao video */

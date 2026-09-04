@@ -134,6 +134,11 @@ const SV = (() => {
     const searchInput = document.getElementById('svSearch');
     const resultsBox = document.getElementById('svSearchResults');
 
+    /* No mobile o placeholder longo truncava ("Pe..."); troca por um curto. */
+    if (searchInput && window.matchMedia("(max-width: 768px)").matches) {
+        searchInput.placeholder = "Buscar...";
+    }
+
     function resItem(item, href) {
         const img = item.logo
             ? `<img src="/proxy/image?u=${encodeURIComponent(item.logo)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=\\'sv-res-noimg\\'><i class=\\'bi bi-play-circle\\'></i></div>'">`
