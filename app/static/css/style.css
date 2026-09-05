@@ -181,45 +181,114 @@ a { text-decoration: none; color: inherit; }
 }
 
 /* ---------------- Hero NETFLIX STYLE ---------------- */
+/* ---------------- Hero (redesign moderno) ---------------- */
 .sv-hero {
     position: relative;
     border-radius: 0;
-    min-height: 720px;
+    min-height: 76vh;
+    max-height: 760px;
     background-size: cover !important;
-    background-position: center 30% !important;
+    background-position: center 25% !important;
+    background-repeat: no-repeat !important;
     display: flex; align-items: flex-end;
     overflow: hidden;
-    margin-bottom: 0;
     margin-left: calc(-1 * var(--bs-gutter-x) * 0.5);
     margin-right: calc(-1 * var(--bs-gutter-x) * 0.5);
     margin-top: calc(-4rem);
+    isolation: isolate;
 }
 .sv-hero::before {
-    content: ""; position: absolute; inset: 0; z-index: 1;
-    background: 
-        linear-gradient(90deg, rgba(8,9,13,.95) 0%, rgba(8,9,13,.75) 35%, rgba(8,9,13,.4) 65%, rgba(8,9,13,.15) 100%),
-        linear-gradient(180deg, rgba(8,9,13,0) 0%, rgba(8,9,13,.3) 50%, rgba(8,9,13,.95) 100%);
+    content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background:
+        linear-gradient(90deg, rgba(8,9,13,.96) 0%, rgba(8,9,13,.78) 32%, rgba(8,9,13,.35) 70%, rgba(8,9,13,.1) 100%),
+        linear-gradient(180deg, rgba(8,9,13,.35) 0%, rgba(8,9,13,.15) 40%, rgba(8,9,13,.92) 100%);
 }
 .sv-hero::after {
-    content: ""; position: absolute; inset: 0; z-index: 1;
-    background: radial-gradient(ellipse 800px 400px at 50% 0%, transparent 40%, var(--background) 100%);
+    content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(900px 480px at 18% 18%, var(--accent-glow), transparent 55%);
+    mix-blend-mode: screen; opacity: .85;
 }
-.sv-hero-body { position: relative; z-index: 2; padding: 64px 64px 80px; max-width: 720px; }
-.sv-hero-title { font-size: clamp(2.4rem, 8vw, 4.2rem); font-weight: 900; margin: 16px 0 20px; line-height: 0.95; letter-spacing: -1px; text-shadow: 2px 4px 8px rgba(0,0,0,.5); }
-.sv-hero-desc { color: var(--text-secondary); font-size: clamp(1rem, 2vw, 1.2rem); max-width: 620px; line-height: 1.6; margin-bottom: 24px; }
-.sv-hero-meta { display: flex; align-items: center; gap: 18px; margin-bottom: 12px; flex-wrap: wrap; }
-.sv-hero-meta .sv-meta-pill {
-    color: var(--text-secondary); font-size: 0.95rem; display: inline-flex; align-items: center; gap: 6px;
-    padding: 5px 0;
+.sv-hero-inner {
+    position: relative; z-index: 2; width: 100%;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 32px;
+    padding: 56px 64px 72px; max-width: 1400px; margin: 0 auto;
 }
-.sv-hero-meta .sv-meta-pill i { color: var(--accent); font-size: 1rem; }
-.sv-hero-actions { display: flex; gap: 14px; margin-top: 32px; flex-wrap: wrap; }
-.sv-hero-actions .btn { min-height: 52px; font-size: 1.05rem; padding: 12px 32px; }
+.sv-hero-info { max-width: 680px; animation: svHeroIn .8s var(--ease) both; }
+@keyframes svHeroIn { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+
+.sv-hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-weight: 900; letter-spacing: 3px; font-size: .76rem;
+    color: var(--accent-soft); text-transform: uppercase; margin-bottom: 14px;
+}
+.sv-hero-eyebrow i { font-size: 1.05rem; color: var(--accent); }
+
 .sv-badge {
     display: inline-block; background: var(--accent); color: #fff;
     font-size: 0.8rem; font-weight: 800; padding: 6px 14px; border-radius: 24px;
     letter-spacing: 0.6px; text-transform: uppercase; box-shadow: 0 4px 16px var(--accent-glow);
-    pointer-events: none;
+}
+.sv-hero .sv-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: .72rem; padding: 6px 12px; border-radius: 20px;
+    box-shadow: 0 6px 18px var(--accent-glow); margin-bottom: 16px; margin-right: 8px;
+}
+.sv-hero-title {
+    font-size: clamp(2.2rem, 6vw, 4rem); font-weight: 900; line-height: .98;
+    letter-spacing: -1.5px; margin: 0 0 16px; text-shadow: 0 6px 24px rgba(0,0,0,.6);
+}
+.sv-hero-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.sv-hero-meta .sv-meta-pill {
+    color: var(--text-secondary); font-size: .95rem; display: inline-flex; align-items: center; gap: 6px; padding: 0;
+}
+.sv-hero-meta .sv-meta-pill i { color: var(--accent); font-size: 1rem; }
+.sv-hero-desc {
+    color: #d6d9e0; font-size: clamp(1rem, 1.6vw, 1.15rem); line-height: 1.6;
+    max-width: 600px; margin: 0 0 20px; text-shadow: 0 2px 10px rgba(0,0,0,.5);
+}
+.sv-hero-tagline strong { color: #fff; font-weight: 800; }
+.sv-hero-genres { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+.sv-hero-genres .sv-chip {
+    font-size: .78rem; font-weight: 700; color: var(--text-secondary);
+    border: 1px solid var(--border-strong); border-radius: 20px; padding: 4px 12px;
+    background: rgba(255,255,255,.04);
+}
+.sv-hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.sv-hero-actions .btn { min-height: 52px; font-size: 1.02rem; padding: 12px 28px; border-radius: 10px; font-weight: 800; }
+.sv-btn-play {
+    background: #fff; color: #0b0d12; border: none;
+    display: inline-flex; align-items: center; gap: 10px;
+    transition: transform .15s var(--ease), box-shadow .2s, background .2s;
+}
+.sv-btn-play:hover { background: #f0f0f3; transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,0,0,.5); }
+.sv-btn-play i { font-size: 1.4rem; }
+.sv-hero-info-btn { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.18); }
+.sv-hero-progress { margin-top: 22px; max-width: 420px; }
+.sv-hero-progress-track { height: 4px; border-radius: 4px; background: rgba(255,255,255,.15); overflow: hidden; }
+.sv-hero-progress-bar { height: 100%; background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+.sv-hero-progress-label { display: block; margin-top: 8px; font-size: .8rem; color: var(--text-secondary); font-weight: 700; }
+
+.sv-hero-poster {
+    flex: 0 0 220px; align-self: center;
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06);
+    animation: svPosterIn .9s var(--ease) both;
+}
+.sv-hero-poster img { display: block; width: 100%; height: 320px; object-fit: cover; }
+@keyframes svPosterIn { from { opacity: 0; transform: translateY(24px) scale(.96); } to { opacity: 1; transform: none; } }
+.sv-hero-poster:hover { transform: translateY(-6px) scale(1.02); transition: transform .3s var(--ease); }
+
+@media (max-width: 991px) {
+    .sv-hero { min-height: 68vh; }
+    .sv-hero-inner { padding: 40px 24px 56px; }
+    .sv-hero-poster { display: none; }
+}
+@media (max-width: 575px) {
+    .sv-hero-title { font-size: clamp(1.8rem, 9vw, 2.6rem); }
+    .sv-hero-actions .btn { flex: 1 1 auto; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .sv-hero-info, .sv-hero-poster { animation: none; }
 }
 
 /* ---------------- Seções ---------------- */
@@ -599,11 +668,7 @@ body.sv-cinema-mode .sv-player-page {
 .toast-container .toast { background: var(--surface); border: 1px solid var(--border); color: var(--text-primary); border-radius: 12px; }
 .toast-container .toast .btn-close-white { filter: invert(1); }
 
-/* Responsivo */
-/* Tablet: 4 cards | Mobile: 2-3 cards */
-@media (max-width: 1400px) {
-    .sv-hero-body { padding: 48px 48px 64px; }
-}
+/* Responsivo — cards */
 @media (max-width: 1200px) {
     .sv-featured-card { width: 280px; }
     .sv-card { width: 190px; }
@@ -613,8 +678,6 @@ body.sv-cinema-mode .sv-player-page {
     .sv-card { width: 170px; }
     .sv-skeleton { width: 170px; }
     .sv-featured-card { width: 260px; }
-    .sv-hero { min-height: 520px; }
-    .sv-hero-body { padding: 36px 36px 48px; }
     .sv-hero-title { font-size: clamp(1.8rem, 6vw, 3rem); }
     .sv-carousel-btn { width: 44px; height: 56px; font-size: 1.4rem; }
 }
@@ -622,8 +685,6 @@ body.sv-cinema-mode .sv-player-page {
     .sv-card { width: 150px; }
     .sv-skeleton { width: 150px; }
     .sv-featured-card { width: 240px; min-height: 280px; }
-    .sv-hero { min-height: 440px; border-radius: 0; margin: 0 -1rem; }
-    .sv-hero-body { padding: 28px 28px 36px; }
     .sv-hero-title { font-size: clamp(1.5rem, 6vw, 2.4rem); }
     .sv-hero-actions { gap: 10px; }
     .sv-hero-actions .btn { min-height: 48px; padding: 10px 24px; font-size: 0.95rem; }
@@ -638,13 +699,6 @@ body.sv-cinema-mode .sv-player-page {
     .sv-card { width: 130px; }
     .sv-skeleton { width: 130px; }
     .sv-featured-card { width: 200px; min-height: 240px; }
-    .sv-hero { min-height: 360px; }
-    .sv-hero-body { padding: 20px 20px 28px; }
-    .sv-hero::before, .sv-hero::after {
-        background: 
-            linear-gradient(90deg, rgba(8,9,13,.98) 0%, rgba(8,9,13,.95) 50%, rgba(8,9,13,.8) 100%),
-            linear-gradient(180deg, rgba(8,9,13,.2) 0%, var(--background) 100%);
-    }
     .sv-hero-title { font-size: clamp(1.3rem, 7vw, 2rem); }
     .sv-hero-desc { font-size: 0.95rem; }
     .sv-hero-actions { gap: 8px; }
@@ -665,8 +719,6 @@ body.sv-cinema-mode .sv-player-page {
     .sv-card { width: 240px; }
     .sv-skeleton { width: 240px; }
     .sv-featured-card { width: 360px; min-height: 360px; }
-    .sv-hero { min-height: 760px; }
-    .sv-hero-body { padding: 80px 80px 100px; }
     .sv-hero-title { font-size: 4.8rem; }
     body { padding-left: 2vw; padding-right: 2vw; }
 }
@@ -711,7 +763,6 @@ body.sv-cinema-mode .sv-player-page {
        padding lateral e a soma (margem -16 + padding 16) estourava o viewport
        em 16px de scroll horizontal. */
     .sv-hero { min-height: 320px; margin-left: 0; margin-right: 0; }
-    .sv-hero-body { padding: 18px 18px 26px; }
 
     /* Carrossel com scroll suave por gesto */
     .sv-carousel {

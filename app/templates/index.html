@@ -121,25 +121,65 @@
     </div>
     {% else %}
 
-    <!-- HERO NETFLIX STYLE -->
+    <!-- HERO (redesign moderno) -->
     {% if hero %}
-    <section class="sv-hero" style="background-image:linear-gradient(0deg, var(--background) 5%, rgba(8,9,13,.5) 60%), url('{{ hero.logo or '' }}');">
-        <div class="sv-hero-body">
-            <span class="sv-badge"><i class="bi bi-broadcast"></i> {{ hero.group_name or hero.category or 'Destaque' }}</span>
-            <h1 class="sv-hero-title">{{ hero.name }}</h1>
-            <div class="sv-hero-meta">
-                {% if hero.year %}<span class="sv-meta-pill"><i class="bi bi-calendar"></i> {{ hero.year }}</span>{% endif %}
-                {% if hero.rating %}<span class="sv-meta-pill"><i class="bi bi-star-fill"></i> {{ hero.rating }}</span>{% endif %}
-                <span class="sv-meta-pill"><i class="bi bi-play-circle"></i> {{ 'Ao vivo' if hero.type == 'live' else 'Filme' if hero.type == 'movie' else 'Série' }}</span>
-            </div>
-            <p class="sv-hero-desc">{{ hero.description or "Assista agora mesmo pelo StreamVault." }}</p>
-            <div class="sv-hero-actions">
-                <a href="/assistir/{{ hero.id }}" class="btn sv-btn-primary"><i class="bi bi-play-fill"></i> Assistir agora</a>
-                <button class="btn sv-btn-ghost sv-fav" data-id="{{ hero.id }}" data-type="{{ hero.type }}" data-name="{{ hero.name }}" data-logo="{{ hero.logo }}" data-url="{{ hero.url }}">
-                    <i class="bi bi-plus-lg"></i> Minha Lista
-                </button>
-            </div>
+    {% set h_is_live = (hero.type == 'live' or hero.content_type == 'live') %}
+    {% set h_is_series = (hero.type == 'series' or hero.content_type == 'series') %}
+    {% set h_id = hero.id or hero.content_id %}
+    {% set h_type = hero.type or hero.content_type %}
+    <section class="sv-hero {% if h_is_live %}sv-hero--live{% else %}sv-hero--poster{% endif %}"
+      {% if not h_is_live and hero.logo %}
+        style="background-image: linear-gradient(90deg, rgba(8,9,13,.96) 0%, rgba(8,9,13,.72) 35%, rgba(8,9,13,.3) 72%, transparent 100%), linear-gradient(180deg, rgba(8,9,13,.3) 0%, rgba(8,9,13,.1) 45%, rgba(8,9,13,.92) 100%), url('{{ hero.logo }}');"
+      {% else %}
+        style="background-image: radial-gradient(900px 480px at 18% 18%, var(--accent-glow), transparent 55%), linear-gradient(90deg, rgba(8,9,13,.96) 0%, rgba(8,9,13,.75) 38%, rgba(8,9,13,.3) 72%, rgba(8,9,13,.1) 100%), linear-gradient(180deg, rgba(8,9,13,.3) 0%, transparent 45%, rgba(8,9,13,.92) 100%);"
+      {% endif %}>
+      <div class="sv-hero-inner">
+        <div class="sv-hero-info">
+          <div class="sv-hero-eyebrow"><i class="bi bi-play-btn-fill"></i> StreamVault</div>
+          <span class="sv-badge"><i class="bi bi-broadcast"></i> {{ hero.group_name or hero.category or 'Destaque' }}</span>
+          <h1 class="sv-hero-title">{{ hero.name }}</h1>
+          <div class="sv-hero-meta">
+            {% if hero.year %}<span class="sv-meta-pill"><i class="bi bi-calendar"></i> {{ hero.year }}</span>{% endif %}
+            {% if hero.rating %}<span class="sv-meta-pill"><i class="bi bi-star-fill"></i> {{ hero.rating }}</span>{% endif %}
+            <span class="sv-meta-pill"><i class="bi bi-play-circle"></i> {{ 'Ao vivo' if h_is_live else 'Filme' if h_type == 'movie' else 'Série' }}</span>
+            {% if hero.duration %}<span class="sv-meta-pill"><i class="bi bi-clock"></i> {{ hero.duration }}</span>{% endif %}
+          </div>
+          {% if hero.description %}
+          <p class="sv-hero-desc">{{ hero.description }}</p>
+          {% else %}
+          <p class="sv-hero-desc sv-hero-tagline">Assista agora mesmo pelo <strong>StreamVault</strong>.</p>
+          {% endif %}
+          {% if hero.genres and hero.genres is not string %}
+          <div class="sv-hero-genres">
+            {% for g in hero.genres[:3] %}<span class="sv-chip">{{ g }}</span>{% endfor %}
+          </div>
+          {% endif %}
+          <div class="sv-hero-actions">
+            <a href="/assistir/{{ h_id }}" class="btn sv-btn-play"><i class="bi bi-play-fill"></i> Assistir{% if h_is_live %} ao vivo{% endif %}</a>
+            <button class="btn sv-btn-ghost sv-fav" data-id="{{ h_id }}" data-type="{{ h_type }}" data-name="{{ hero.name }}" data-logo="{{ hero.logo }}" data-url="{{ hero.url or '' }}">
+                <i class="bi bi-plus-lg"></i> Minha Lista
+            </button>
+            {% if not h_is_live %}
+              {% if h_is_series %}
+              <a href="/detalhes-series/{{ (hero.name or '')|urlencode }}" class="btn sv-btn-ghost sv-hero-info-btn"><i class="bi bi-info-circle"></i> Detalhes</a>
+              {% else %}
+              <a href="/detalhes/{{ h_id }}" class="btn sv-btn-ghost sv-hero-info-btn"><i class="bi bi-info-circle"></i> Detalhes</a>
+              {% endif %}
+            {% endif %}
+          </div>
+          {% if hero.position and hero.duration and hero.duration > 0 %}
+          <div class="sv-hero-progress">
+            <div class="sv-hero-progress-track"><div class="sv-hero-progress-bar" style="width:{{ (hero.position / hero.duration * 100)|round }}%"></div></div>
+            <span class="sv-hero-progress-label">{{ (hero.position / hero.duration * 100)|round }}% assistido</span>
+          </div>
+          {% endif %}
         </div>
+        {% if not h_is_live and hero.logo %}
+        <div class="sv-hero-poster">
+          <img src="{{ hero.logo }}" alt="{{ hero.name }}" loading="eager">
+        </div>
+        {% endif %}
+      </div>
     </section>
     {% endif %}
 
