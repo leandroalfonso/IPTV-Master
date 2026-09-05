@@ -66,18 +66,73 @@
         showSpinner(); hideMsg();
 
         if (window.Hls && window.Hls.isSupported()) {
+            // Tuning para IPTV com segmentos LONGOS (8-12s):
+            // - liveSyncDuration maior: ficar a 3s do edge ao vivo drena o
+            //   buffer a cada variação de throughput -> stall constante. Com
+            //   12s o player acumula folga e engole flutuação de rede.
+            // - maxBufferLength 24s: lookahead suficiente para o próximo
+            //   segmento de 12s estar pronto antes do atual acabar.
+            // - maxBufferSize 96MB: sem isso o padrão (60MB) corta o buffer
+            //   de comprimento antes em streams 4K.
+            // - fragLoadingTimeOut 45s / maxRetry 8: abortar e recarregar um
+            //   segmento de 12s lento custa mais que esperar; retries com
+            //   timeout curto causavam o loop de stall.
+            // - startFragPrefetch: baixa o 1º fragmento em paralelo com a
+            //   montagem do SourceBuffer (startup mais rápido).
             hls = new window.Hls({
-                enableWorker: true, lowLatencyMode: isLive,
-                liveSyncDuration: isLive ? 3 : undefined,
-                fragLoadingMaxRetry: 6, manifestLoadingMaxRetry: 4,
+                enableWorker: true,
+                lowLatencyMode: false,
+                liveSyncDuration: isLive ? 12 : undefined,
+                liveMaxLatencyDuration: isLive ? 40 : undefined,
+                maxBufferLength: 24,
+                maxMaxBufferLength: 60,
                 backBufferLength: isLive ? 30 : 90,
+                maxBufferSize: 96 * 1000 * 1000,
+                fragLoadingTimeOut: 45000,
+                fragLoadingMaxRetry: 8,
+                fragLoadingRetryDelay: 500,
+                fragLoadingMaxRetryTimeout: 8000,
+                manifestLoadingTimeOut: 20000,
+                manifestLoadingMaxRetry: 4,
+                startFragPrefetch: true,
             });
             hls.loadSource(url);
             hls.attachMedia(video);
+            window.__hls = hls; // handle de diagnóstico (console/devtools)
 
             hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
                 hideSpinner();
-                video.play().catch(() => showMsg("Clique em Play para iniciar a transmissão.", "bi-play-circle", "info"));
+                // Duas esperas antes do play para eliminar stalls de arranque:
+                // 1) ~2.5s de buffer (VOD e live): iniciar seco trava enquanto
+                //    o 1o fragmento (8-12s) termina de chegar.
+                // 2) live: o hls.js re-posiciona o video para o live edge
+                //    (liveSyncPosition) logo apos o primeiro append. Se o play
+                //    partir de t=0, esse seek interno causa um micro-stall de
+                //    ~0.8s em seguida. Esperamos o currentTime ser movido (ou
+                //    o seek em curso) antes de dar play.
+                // Timeout de seguranca de 8s: se nada subir (origem lenta),
+                // da play mesmo assim e o fluxo de erros existente cuida.
+                const t0 = Date.now();
+                const tryPlay = () => {
+                    let buffered = 0;
+                    try { buffered = video.buffered.length ? video.buffered.end(video.buffered.length - 1) : 0; } catch (e) {}
+                    if (buffered >= 2.5 || Date.now() - t0 > 8000) {
+                        // live: posicione ANTES do play no liveSyncPosition. Se o
+                        // play partir de t=0, o hls.js re-busca a posicao de sync
+                        // logo apos comecar (seek pos-play = stall de arranque).
+                        if (isLive && hls && Number.isFinite(hls.liveSyncPosition)) {
+                            const lsp = hls.liveSyncPosition;
+                            const bufEnd = buffered;
+                            if (Math.abs(video.currentTime - lsp) > 0.5 && (!bufEnd || lsp <= bufEnd + 0.2)) {
+                                try { video.currentTime = lsp; } catch (e) {}
+                            }
+                        }
+                        video.play().catch(() => showMsg("Clique em Play para iniciar a transmissão.", "bi-play-circle", "info"));
+                    } else {
+                        setTimeout(tryPlay, 250);
+                    }
+                };
+                tryPlay();
             });
             hls.on(window.Hls.Events.ERROR, (evt, data) => {
                 logErr("Erro HLS:", data);
@@ -111,6 +166,17 @@
             hideSpinner();
             if (!isLive && cfg.start && cfg.start > 1) {
                 try { video.currentTime = Math.min(cfg.start, video.duration || cfg.start); } catch (e) {}
+            }
+            // Live nativo (Safari/iOS): começar no fim do buffer (~edge) e nao
+            // em t=0. Em janela deslizante, t=0 sai do range bufferizado em
+            // poucos segundos e o player sofre stall + salto forcado.
+            if (isLive) {
+                try {
+                    const b = video.buffered;
+                    if (b.length && b.end(b.length - 1) - b.start(0) > 12) {
+                        video.currentTime = b.end(b.length - 1) - 6;
+                    }
+                } catch (e) {}
             }
             video.play().catch(() => showMsg("Clique em Play para iniciar.", "bi-play-circle", "info"));
         }, { once: true });

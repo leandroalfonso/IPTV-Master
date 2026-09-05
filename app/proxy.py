@@ -42,6 +42,16 @@ logger = logging.getLogger("streamvault.proxy")
 
 bp = Blueprint("proxy", __name__)
 
+# --------------------------------------------------------------------------- #
+# Sessão HTTP compartilhada: reusa conexões TCP para a origem (pool). Antes,
+# cada manifesto/segmento abria uma conexão nova (handshake + RTT a cada
+# fragmento) — latência perceptível no startup e nos stalls do player.
+# --------------------------------------------------------------------------- #
+_SESSION = requests.Session()
+_adapter = requests.adapters.HTTPAdapter(pool_connections=8, pool_maxsize=32)
+_SESSION.mount("http://", _adapter)
+_SESSION.mount("https://", _adapter)
+
 # Pasta que contém os segmentos dentro do manifesto (ex.: /hls/...).
 _SEGMENT_RE = re.compile(r"^(/[\w.\-/%]+?\.(?:ts|aac|mp4|m4s|key|vtt|m3u8))$", re.I)
 
@@ -177,14 +187,17 @@ def _verify_origin(origin: str, sig: str) -> bool:
 def _stream_ranges(url: str, start: int, end: int | None, ctype_holder: list):
     """Gerador que busca a origem em FATIAS (range requests) e as costura.
 
-    A origem IPTV corta conexões longas (IncompleteRead no meio de uma fatia) e
-    às vezes responde 503 (rate-limit). Por isso: (1) pedimos a origem em pedaços
-    de ~4MB; (2) cada fatia tem retry com backoff; (3) há um pequeno espaçamento
-    entre fatias para não sobrecarregar a origem. Isso contorna o corte e o
-    rate-limit, e ainda permite seek (o navegador pede Range -> proxyia o trecho).
+    A origem IPTV corta conexões longas (IncompleteRead/EOF curto no meio de
+    uma fatia) e às vezes responde 503 (rate-limit). Por isso: (1) pedimos a
+    origem em fatias de ~4MB; (2) cada fatia tem retry com backoff; (3) o
+    retry RETOMA do offset exato já entregue (nunca repete bytes — duplicação
+    corrompia o stream); (4) a fatia só é dada como completa se entregou o
+    tamanho esperado (EOF curto sem Content-Length gerava buraco no stream);
+    (5) o fim respeita o Range do CLIENTE e o tamanho real do arquivo —
+    passar do fim gerava ranges invertidos (bytes=N-N-1) -> 416 -> corte.
+    Isso tudo permite seek (navegador pede Range -> proxyia o trecho).
     """
     import time
-    from urllib3.exceptions import IncompleteRead
 
     SLICE = 4 * 1024 * 1024  # 4 MB por requisição à origem (evita corte da origem)
     MAX_RETRY = 3
@@ -193,24 +206,30 @@ def _stream_ranges(url: str, start: int, end: int | None, ctype_holder: list):
         "Referer": _origin_of(url) + "/",
     }
     pos = start
-    total = end  # None = até o fim (vamos descobrir via Content-Range)
-    first_fatia = True
+    total = None  # tamanho do arquivo (descoberto via Content-Range)
     while True:
-        if total is not None and pos > total:
-            break
-        hi = (pos + SLICE - 1) if (end is None or pos + SLICE - 1 < end) else end
-        range_hdr = f"bytes={pos}-{hi if hi is not None else ''}"
-
-        # Pequeno espaçamento entre fatias (exceto a primeira) p/ evitar
-        # rate-limit da origem em sequências rápidas.
-        if not first_fatia:
-            time.sleep(0.3)
-        first_fatia = False
-
         fatia_ok = False
         for attempt in range(MAX_RETRY):
+            # A última fatia termina no MENOR entre: fatia padrão, fim do
+            # range do cliente, fim do arquivo conhecido.
+            if end is not None:
+                hi = min(pos + SLICE - 1, end)
+            elif total is not None:
+                hi = min(pos + SLICE - 1, total - 1)
+            else:
+                hi = pos + SLICE - 1
+            if hi < pos:  # nada restante
+                return
+            range_hdr = f"bytes={pos}-{hi}"
+            slice_first = pos
+
+            # Pequeno espaçamento entre tentativas p/ evitar rate-limit da
+            # origem em sequências rápidas (exceto a primeira requisição).
+            if attempt > 0:
+                time.sleep(0.3)
+
             try:
-                rr = requests.get(
+                rr = _SESSION.get(
                     url, headers={**base_headers, "Range": range_hdr},
                     timeout=30, allow_redirects=True, stream=True,
                 )
@@ -233,27 +252,40 @@ def _stream_ranges(url: str, start: int, end: int | None, ctype_holder: list):
                     total = int(cr.rsplit("/", 1)[1])
                 except ValueError:
                     pass
+            delivered = 0
             try:
                 for chunk in rr.iter_content(chunk_size=65536):
                     if chunk:
+                        delivered += len(chunk)
                         yield chunk
-                fatia_ok = True
             except Exception as exc:
-                # Origem cortou a conexão no meio da fatia: os chunks já
-                # yieldados foram entregues; tentamos de novo a mesma fatia.
-                logger.warning("Proxy mídia fatia interrompida (retry %d): %s", attempt + 1, exc)
+                # Origem cortou a conexão no meio da fatia. Os chunks já
+                # yieldados FORAM entregues ao player: retomar do ponto exato
+                # (offset real) em vez de re-baixar a fatia inteira.
+                logger.warning(
+                    "Proxy mídia fatia interrompida após %dB (retry %d): %s",
+                    delivered, attempt + 1, exc,
+                )
             finally:
                 rr.close()
-            if fatia_ok:
+            if delivered >= (hi - slice_first + 1):
+                fatia_ok = True
                 break
-            time.sleep(0.5 * (attempt + 1))
+            # Fatia incompleta (exceção ou EOF curto sem Content-Length):
+            # retoma do offset exato já entregue; sem isso haveria BURACO
+            # (bytes pulados) ou duplicação no meio do vídeo.
+            logger.warning(
+                "Proxy mídia fatia incompleta: %d/%dB (tent %d) range=%s",
+                delivered, hi - slice_first + 1, attempt + 1, range_hdr,
+            )
+            pos = slice_first + delivered
         if not fatia_ok:
             # Esgotou retries: entrega o que já veio e encerra (o player nativo
             # refaz o Range para o trecho faltante).
             logger.warning("Proxy mídia: fatia %s dada como perdida após retries", range_hdr)
             return
-        if hi is None or (total is not None and hi >= total):
-            break
+        if hi is None or (total is not None and hi >= total - 1):
+            break  # última fatia do arquivo
         pos = hi + 1
 
 
@@ -335,7 +367,7 @@ def proxy_stream(content_id: str):
     if request.range:
         headers["Range"] = request.headers.get("Range")
     try:
-        r = requests.get(
+        r = _SESSION.get(
             target, headers=headers, timeout=30, allow_redirects=True, stream=True
         )
     except requests.RequestException as exc:
@@ -397,7 +429,7 @@ def proxy_playlist():
         abort(403)
 
     try:
-        r = requests.get(
+        r = _SESSION.get(
             u,
             headers={"User-Agent": "StreamVault/1.0", "Referer": _origin_of(u) + "/"},
             timeout=20,
@@ -444,16 +476,18 @@ def proxy_segment():
         abort(403)
 
     try:
-        r = requests.get(
+        r = _SESSION.get(
             u,
             headers={"User-Agent": "StreamVault/1.0", "Referer": _origin_of(u) + "/"},
             timeout=20,
             allow_redirects=True,
+            stream=True,
         )
     except requests.RequestException:
         return Response("Segmento indisponível.", status=503)
 
     if r.status_code != 200:
+        r.close()
         return Response(f"Segmento indisponível (HTTP {r.status_code}).", status=503)
 
     # Força o mime correto para segmentos HLS (servidores às vezes mandam
@@ -464,10 +498,24 @@ def proxy_segment():
         guessed = mimetypes.guess_type("x." + ext)[0]
         if guessed:
             ctype = guessed
-    resp = Response(r.content, status=200, mimetype=ctype or "video/mp2t")
+    # STREAMING (não bufferiza): antes usávamos r.content, que baixava o
+    # segmento INTEIRO na RAM antes de enviar o 1º byte ao player — dobra a
+    # latência por fragmento e estoura memória em segmentos 4K. Iterando os
+    # chunks da origem, o 1º byte chega ao player assim que a origem entrega.
+    resp = Response(_iter_sse(r), status=200, mimetype=ctype or "video/mp2t")
     resp.headers["Access-Control-Allow-Origin"] = "*"
     resp.headers["Cache-Control"] = "public, max-age=10"
     return resp
+
+
+def _iter_sse(r):
+    """Itera os chunks da resposta da origem e garante o close da conexão."""
+    try:
+        for chunk in r.iter_content(chunk_size=65536):
+            if chunk:
+                yield chunk
+    finally:
+        r.close()
 
 
 # --------------------------------------------------------------------------- #
