@@ -189,7 +189,8 @@ def _stream_ranges(url: str, start: int, end: int | None, ctype_holder: list):
 
     A origem IPTV corta conexões longas (IncompleteRead/EOF curto no meio de
     uma fatia) e às vezes responde 503 (rate-limit). Por isso: (1) pedimos a
-    origem em fatias de ~4MB; (2) cada fatia tem retry com backoff; (3) o
+    origem em fatias de ~2MB, compatíveis com o limite observado no provedor;
+    (2) cada fatia tem retry com backoff curto; (3) o
     retry RETOMA do offset exato já entregue (nunca repete bytes — duplicação
     corrompia o stream); (4) a fatia só é dada como completa se entregou o
     tamanho esperado (EOF curto sem Content-Length gerava buraco no stream);
@@ -199,7 +200,9 @@ def _stream_ranges(url: str, start: int, end: int | None, ctype_holder: list):
     """
     import time
 
-    SLICE = 4 * 1024 * 1024  # 4 MB por requisição à origem (evita corte da origem)
+    # A origem observada encerra conexões exatamente após 2 MiB. Pedir 4 MiB
+    # provocava IncompleteRead a cada fatia e uma pausa perceptível no retry.
+    SLICE = 2 * 1024 * 1024
     MAX_RETRY = 3
     base_headers = {
         "User-Agent": "StreamVault/1.0",
@@ -235,12 +238,12 @@ def _stream_ranges(url: str, start: int, end: int | None, ctype_holder: list):
                 )
             except requests.RequestException as exc:
                 logger.warning("Proxy mídia fatia falhou (tent %d): %s", attempt + 1, exc)
-                time.sleep(0.5 * (attempt + 1))
+                time.sleep(0.15 * (attempt + 1))
                 continue
             if rr.status_code not in (200, 206):
                 rr.close()
                 logger.warning("Proxy mídia fatia HTTP %s (tent %d)", rr.status_code, attempt + 1)
-                time.sleep(0.5 * (attempt + 1))
+                time.sleep(0.15 * (attempt + 1))
                 continue
             if not ctype_holder[0]:
                 ct = rr.headers.get("Content-Type", "")
