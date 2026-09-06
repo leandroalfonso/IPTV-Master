@@ -125,7 +125,7 @@
     {% if hero %}
     {% set h_is_live = (hero.type == 'live' or hero.content_type == 'live') %}
     {% set h_is_series = (hero.type == 'series' or hero.content_type == 'series') %}
-    {% set h_id = hero.id or hero.content_id %}
+    {% set h_id = hero.content_id if hero.content_id else hero.id %}
     {% set h_type = hero.type or hero.content_type %}
     <section class="sv-hero {% if h_is_live %}sv-hero--live{% else %}sv-hero--poster{% endif %}"
       {% if not h_is_live and hero.logo %}
