@@ -70,31 +70,26 @@
             // - liveSyncDuration maior: ficar a 3s do edge ao vivo drena o
             //   buffer a cada variação de throughput -> stall constante. Com
             //   12s o player acumula folga e engole flutuação de rede.
-            // - maxBufferLength 24s: lookahead suficiente para o próximo
-            //   segmento de 12s estar pronto antes do atual acabar.
-            // - maxBufferSize 96MB: sem isso o padrão (60MB) corta o buffer
-            //   de comprimento antes em streams 4K.
-            // - fragLoadingTimeOut 45s / maxRetry 8: abortar e recarregar um
-            //   segmento de 12s lento custa mais que esperar; retries com
-            //   timeout curto causavam o loop de stall.
-            // - startFragPrefetch: baixa o 1º fragmento em paralelo com a
-            //   montagem do SourceBuffer (startup mais rápido).
+            // VOD precisa de uma reserva maior: com apenas 24s e prefetch
+            // agressivo, pequenas oscilações da origem podiam esgotar o buffer
+            // e produzir micro-travamentos. Live mantém buffer menor para não
+            // acumular latência; VOD usa 60s/120s e não faz prefetch paralelo.
             hls = new window.Hls({
                 enableWorker: true,
                 lowLatencyMode: false,
                 liveSyncDuration: isLive ? 12 : undefined,
                 liveMaxLatencyDuration: isLive ? 40 : undefined,
-                maxBufferLength: 24,
-                maxMaxBufferLength: 60,
+                maxBufferLength: isLive ? 24 : 60,
+                maxMaxBufferLength: isLive ? 60 : 120,
                 backBufferLength: isLive ? 30 : 90,
-                maxBufferSize: 96 * 1000 * 1000,
+                maxBufferSize: isLive ? 96 * 1000 * 1000 : 192 * 1000 * 1000,
                 fragLoadingTimeOut: 45000,
                 fragLoadingMaxRetry: 8,
                 fragLoadingRetryDelay: 500,
                 fragLoadingMaxRetryTimeout: 8000,
                 manifestLoadingTimeOut: 20000,
                 manifestLoadingMaxRetry: 4,
-                startFragPrefetch: true,
+                startFragPrefetch: isLive,
             });
             hls.loadSource(url);
             hls.attachMedia(video);
