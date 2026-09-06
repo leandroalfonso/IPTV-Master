@@ -6,6 +6,7 @@ frontend (favoritos, pesquisa, histórico, atualização da lista).
 
 import threading
 import logging
+import json
 
 from flask import (
     Blueprint, render_template, request, jsonify, current_app, abort, redirect,
@@ -470,20 +471,46 @@ def api_admin_config():
             "movies": database.count_by_type("movie"),
             "series": database.count_by_type("series"),
             "last_loaded_at": database.get_setting("last_loaded_at"),
+            "last_error": database.get_setting("last_error") or "",
+            "source": config.Config.IPTV_M3U_URL,
+            "has_backup": bool(database.get_setting("config_backup")),
         })
 
     data = request.get_json(silent=True) or {}
     action = data.get("action", "save")
+    if action == "validate":
+        source = str(data.get("IPTV_M3U_URL", "")).strip()
+        if not source or not (source.startswith(("http://", "https://")) or source.endswith((".m3u", ".m3u8"))):
+            return jsonify({"error": "Informe uma URL HTTP(S) ou um arquivo .m3u/.m3u8."}), 400
+        try:
+            return jsonify({"ok": True, **iptv.summarize_m3u_source(source)})
+        except Exception as exc:
+            logger.warning("Falha na validação da lista via painel: %s", exc)
+            return jsonify({"ok": False, "error": "A fonte não contém uma lista M3U válida ou está indisponível."}), 422
     if action == "refresh":
         try:
-            return jsonify({"ok": True, **iptv.refresh(force=True)})
+            summary = iptv.refresh(force=True)
+            database.set_setting("last_error", "")
+            return jsonify({"ok": True, **summary})
         except Exception as exc:
+            database.set_setting("last_error", str(exc)[:500])
             logger.error("Erro ao atualizar lista via painel: %s", exc)
             return jsonify({"ok": False, "error": "Não foi possível atualizar a lista."}), 502
     if action == "clear":
         database.clear_contents()
         database.set_setting("last_loaded_at", "")
+        database.set_setting("last_error", "")
         return jsonify({"ok": True, "total": 0, "channels": 0, "movies": 0, "series": 0})
+    if action == "rollback":
+        backup_raw = database.get_setting("config_backup")
+        if not backup_raw:
+            return jsonify({"error": "Nenhum backup de configuração disponível."}), 409
+        try:
+            backup = json.loads(backup_raw)
+            config.save_env(backup)
+            return jsonify({"ok": True, "rolled_back": True})
+        except (TypeError, ValueError, KeyError):
+            return jsonify({"error": "Backup de configuração inválido."}), 500
 
     source = str(data.get("IPTV_M3U_URL", "")).strip()
     provider_type = str(data.get("IPTV_TYPE", "m3u")).strip().lower()
@@ -495,11 +522,18 @@ def api_admin_config():
         return jsonify({"error": "Somente listas M3U estão disponíveis."}), 400
     if not source or not (source.startswith(("http://", "https://")) or source.endswith((".m3u", ".m3u8"))):
         return jsonify({"error": "Informe uma URL HTTP(S) ou um arquivo .m3u/.m3u8."}), 400
+    previous = {
+        "IPTV_TYPE": config.Config.IPTV_TYPE,
+        "IPTV_M3U_URL": config.Config.IPTV_M3U_URL,
+        "IPTV_CACHE_MINUTES": config.Config.IPTV_CACHE_MINUTES,
+    }
+    database.set_setting("config_backup", json.dumps(previous))
     config.save_env({
         "IPTV_TYPE": provider_type,
         "IPTV_M3U_URL": source,
         "IPTV_CACHE_MINUTES": cache_minutes,
     })
+    database.set_setting("last_error", "")
     return jsonify({"ok": True, "configured": True})
 
 

@@ -183,20 +183,29 @@ def _streamvault_config(action=None, payload=None):
 def configuracoes():
     if request.method == 'POST':
         action = request.form.get('action', 'save')
-        if action == 'save':
+        if action in {'save', 'validate'}:
             source = request.form.get('IPTV_M3U_URL', '').strip()
             payload = {
                 'IPTV_M3U_URL': source,
                 'IPTV_TYPE': 'm3u',
                 'IPTV_CACHE_MINUTES': request.form.get('IPTV_CACHE_MINUTES', '30'),
             }
+            if action == 'validate':
+                payload['action'] = 'validate'
             result, error = _streamvault_config(payload=payload)
         else:
             result, error = _streamvault_config(action=action)
         if error:
             flash(error, 'danger')
+        elif action == 'validate' and result and result.get('ok'):
+            flash(f"Fonte válida: {result.get('total', 0)} itens — {result.get('channels', 0)} canais, {result.get('movies', 0)} filmes e {result.get('series', 0)} séries.", 'success')
         elif result and result.get('ok'):
-            flash('Configuração da lista IPTV atualizada.', 'success')
+            if action == 'rollback':
+                flash('Configuração anterior restaurada.', 'success')
+            elif action == 'refresh':
+                flash(f"Lista atualizada: {result.get('total', 0)} itens carregados.", 'success')
+            else:
+                flash('Configuração da lista IPTV atualizada.', 'success')
         else:
             flash((result or {}).get('error', 'Operação não concluída.'), 'danger')
         return redirect(url_for('admin.configuracoes'))

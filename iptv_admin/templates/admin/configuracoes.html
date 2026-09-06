@@ -25,16 +25,19 @@
     Estado: <strong class="text-light">{{ 'configurada' if status.get('configured') else 'não configurada' }}</strong>
     {% if status.get('last_loaded_at') %} · Última atualização: {{ status.get('last_loaded_at') }}{% endif %}
   </p>
+  {% if status.get('last_error') %}
+  <div class="alert alert-warning mt-3 mb-0"><i class="bi bi-exclamation-triangle"></i> Última falha: {{ status.get('last_error') }}</div>
+  {% endif %}
 </div>
 
 <div class="card-panel mb-4">
   <h2><i class="bi bi-broadcast"></i> Inserir lista M3U</h2>
   <form method="post">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-    <input type="hidden" name="action" value="save">
     <div class="mb-3">
       <label class="form-label" for="iptvUrl">URL da lista M3U ou caminho de arquivo</label>
       <input class="form-control" id="iptvUrl" name="IPTV_M3U_URL" required
+             value="{{ status.get('source', '') }}"
              placeholder="https://exemplo.com/lista.m3u ou data/minha-lista.m3u"
              autocomplete="off">
       <div class="form-text">A URL é enviada somente ao StreamVault pelo canal administrativo e não é exibida aos usuários IPTV.</div>
@@ -43,7 +46,10 @@
       <label class="form-label" for="cacheMinutes">Cache da lista (minutos)</label>
       <input class="form-control" id="cacheMinutes" name="IPTV_CACHE_MINUTES" type="number" min="1" max="1440" value="{{ status.get('cache_minutes', 30) }}">
     </div>
-    <button class="btn btn-primary" type="submit"><i class="bi bi-save"></i> Salvar configuração</button>
+    <div class="d-flex flex-wrap gap-2">
+      <button class="btn btn-outline-info" type="submit" name="action" value="validate"><i class="bi bi-check2-circle"></i> Testar conexão</button>
+      <button class="btn btn-primary" type="submit" name="action" value="save"><i class="bi bi-save"></i> Salvar configuração</button>
+    </div>
   </form>
 </div>
 
@@ -60,6 +66,13 @@
       <input type="hidden" name="action" value="clear">
       <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash"></i> Limpar cache</button>
     </form>
+    {% if status.get('has_backup') %}
+    <form method="post" onsubmit="return confirm('Restaurar a configuração anterior?')">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="rollback">
+      <button class="btn btn-outline-warning" type="submit"><i class="bi bi-arrow-counterclockwise"></i> Restaurar configuração anterior</button>
+    </form>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

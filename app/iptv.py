@@ -211,12 +211,30 @@ def parse_m3u(text: str) -> list[Content]:
     return items
 
 
+def summarize_m3u_text(text: str) -> dict:
+    """Valida uma lista M3U sem alterar o catálogo persistido."""
+    items = parse_m3u(text)
+    if not items:
+        raise ValueError("A lista não contém nenhuma entrada M3U válida.")
+    return {
+        "total": len(items),
+        "channels": sum(1 for item in items if item.type == "live"),
+        "movies": sum(1 for item in items if item.type == "movie"),
+        "series": sum(1 for item in items if item.type == "series"),
+    }
+
+
 def _fetch_m3u_text() -> str:
     """Obtém o texto da lista de acordo com a configuração.
 
     Suporta URL http/https ou arquivo local (caminho relativo à BASE_DIR).
     """
-    source = config.Config.IPTV_M3U_URL.strip()
+    return _fetch_m3u_source(config.Config.IPTV_M3U_URL)
+
+
+def _fetch_m3u_source(source: str) -> str:
+    """Obtém uma fonte M3U específica sem alterar a configuração ativa."""
+    source = str(source or "").strip()
     if not source:
         raise ValueError("IPTV_M3U_URL não configurada no .env")
 
@@ -233,6 +251,11 @@ def _fetch_m3u_text() -> str:
         logger.info("Lendo lista IPTV local: %s", path)
         with open(path, "r", encoding="utf-8", errors="replace") as f:
             return f.read()
+
+
+def summarize_m3u_source(source: str) -> dict:
+    """Baixa/lê e valida uma fonte M3U sem substituir o catálogo atual."""
+    return summarize_m3u_text(_fetch_m3u_source(source))
 
 
 def load_from_m3u(force: bool = False) -> dict:
