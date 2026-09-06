@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 import unittest
+import re
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from app import create_app
@@ -52,6 +53,30 @@ class DeviceLimitApiTests(unittest.TestCase):
         second = self.app.test_client().post('/api/auth', json=self.credentials, headers={'X-Device-ID': 'device-b'})
         self.assertEqual(second.status_code, 403)
         self.assertEqual(second.get_json()['reason'], 'device_limit')
+
+    def test_web_app_login_rejects_second_device_at_app_login(self):
+        first_client = self.app.test_client()
+        first_form = first_client.get('/app/login')
+        csrf = re.search(r'name="_csrf" value="([^"]+)"', first_form.get_data(as_text=True)).group(1)
+        first = first_client.post('/app/login', data={
+            'username': self.credentials['username'],
+            'password': self.credentials['password'],
+            '_csrf': csrf,
+        })
+        self.assertEqual(first.status_code, 302)
+        self.assertIn('iptv_device_id=', first.headers.get('Set-Cookie', ''))
+
+        second_client = self.app.test_client()
+        second_form = second_client.get('/app/login')
+        csrf = re.search(r'name="_csrf" value="([^"]+)"', second_form.get_data(as_text=True)).group(1)
+        second = second_client.post('/app/login', data={
+            'username': self.credentials['username'],
+            'password': self.credentials['password'],
+            '_csrf': csrf,
+        })
+        self.assertEqual(second.status_code, 403)
+        self.assertIsNone(second.headers.get('Location'))
+        self.assertIn('Limite de dispositivos atingido.', second.get_data(as_text=True))
 
 
 if __name__ == '__main__':

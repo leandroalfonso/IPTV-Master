@@ -9,6 +9,7 @@ from functools import wraps
 from flask import Blueprint, abort, current_app, redirect, render_template, request, session, url_for
 from extensions import db
 from models import User
+from routes.api import claim_device_id
 from utils import csrf_protect, log_access, utcnow
 
 app_bp = Blueprint('user_app', __name__, url_prefix='/app')
@@ -80,6 +81,13 @@ def login():
         if user.is_expired():
             log_access(user.id, 'ACCESS_DENIED', False, request)
             return render_template('app/login.html', error='Acesso expirado.'), 403
+        device_id = claim_device_id(user)
+        if device_id is None:
+            log_access(user.id, 'ACCESS_DENIED', False, request)
+            return render_template(
+                'app/login.html',
+                error='Limite de dispositivos atingido. Encerre um dispositivo antes de entrar.',
+            ), 403
         session.clear()
         session['app_user_id'] = user.id
         user.last_login = utcnow()
@@ -87,8 +95,11 @@ def login():
         log_access(user.id, 'LOGIN', True, request)
         target = _iptv_url(user)
         if target:
-            return redirect(target)
-        return redirect(url_for('user_app.home'))
+            response = redirect(target)
+        else:
+            response = redirect(url_for('user_app.home'))
+        response.set_cookie('iptv_device_id', device_id, max_age=60 * 60 * 24 * 365, httponly=True, samesite='Lax')
+        return response
     return render_template('app/login.html', error=error)
 
 

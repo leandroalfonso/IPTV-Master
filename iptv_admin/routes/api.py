@@ -22,11 +22,12 @@ def deny(reason, message, status=401, user=None):
 def request_device_id():
     return (request.headers.get('X-Device-ID') or request.cookies.get('iptv_device_id') or '').strip()
 
-def claim_device(user):
+def claim_device_id(user):
+    """Registra o dispositivo atual sem acoplar a resposta ao formato da API."""
     device_id = request_device_id() or secrets.token_urlsafe(24)
     active_ids = [row.device_id for row in UserDevice.query.filter_by(user_id=user.id, active=True).all()]
     if not can_claim_device(active_ids, device_id, user.device_limit):
-        return None, deny('device_limit', 'Limite de dispositivos atingido.', 403, user)
+        return None
     device = UserDevice.query.filter_by(user_id=user.id, device_id=device_id).first()
     if device is None:
         device = UserDevice(user_id=user.id, device_id=device_id)
@@ -34,6 +35,12 @@ def claim_device(user):
     device.active = True
     device.last_seen = utcnow()
     device.ip_address = request.remote_addr
+    return device_id
+
+def claim_device(user):
+    device_id = claim_device_id(user)
+    if device_id is None:
+        return None, deny('device_limit', 'Limite de dispositivos atingido.', 403, user)
     return device_id, None
 
 def find_authorized(data):
