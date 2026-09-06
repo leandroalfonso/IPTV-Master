@@ -1,6 +1,7 @@
 from datetime import timedelta
 from functools import wraps
 import json
+import secrets
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, current_app
@@ -94,6 +95,39 @@ def novo_usuario():
         flash(f'Usuário {user.username} criado. Token: {user.access_token}', 'success')
         return redirect(url_for('admin.usuario_detalhes', user_id=user.id))
     return render_template('admin/usuario_form.html', user=None)
+
+@admin_bp.post('/usuarios/teste')
+@admin_required
+@csrf_protect
+def criar_usuario_teste():
+    username = None
+    for _ in range(10):
+        candidate = f'teste-{secrets.token_hex(4)}'
+        if not User.query.filter_by(username=candidate).first():
+            username = candidate
+            break
+    if username is None:
+        flash('Não foi possível gerar um usuário teste único.', 'danger')
+        return redirect(url_for('admin.usuarios'))
+
+    password = secrets.token_urlsafe(12)
+    now = utcnow()
+    user = User(
+        username=username,
+        name='Usuário teste',
+        active=True,
+        activated_at=now,
+        expires_at=now + timedelta(hours=8),
+        device_limit=1,
+        notes='Usuário teste criado pelo painel; validade de 8 horas.',
+    )
+    user.set_password(password)
+    db.session.add(user)
+    db.session.flush()
+    log_access(user.id, 'TEST_USER_CREATED', True, request)
+    db.session.commit()
+    flash(f'Usuário teste criado. Login: {username} · Senha: {password}', 'success')
+    return redirect(url_for('admin.usuario_detalhes', user_id=user.id))
 
 @admin_bp.route('/usuarios/<int:user_id>/editar', methods=['GET','POST'])
 @admin_required
