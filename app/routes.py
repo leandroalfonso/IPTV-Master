@@ -8,10 +8,11 @@ import threading
 import logging
 
 from flask import (
-    Blueprint, render_template, request, jsonify, current_app, abort,
+    Blueprint, render_template, request, jsonify, current_app, abort, redirect,
+    session,
 )
 
-from . import database, iptv, config, tmdb
+from . import database, iptv, config, tmdb, auth
 
 bp = Blueprint("main", __name__)
 logger = logging.getLogger("streamvault.routes")
@@ -201,22 +202,9 @@ def minha_lista():
 
 @bp.route("/configuracoes")
 def configuracoes():
-    summary = {
-        "channels": database.count_by_type("live"),
-        "movies": database.count_by_type("movie"),
-        "series": database.count_by_type("series"),
-        "total": database.count_total(),
-    }
-    last = database.get_setting("last_loaded_at")
-    return render_template(
-        "configuracoes.html",
-        summary=summary,
-        last_loaded=last,
-        cache_minutes=config.Config.IPTV_CACHE_MINUTES,
-        iptv_type=config.Config.IPTV_TYPE,
-        configured=iptv.is_configured(),
-        # Nunca expõe a URL/senha real ao template.
-    )
+    # A configuração da lista pertence ao painel administrativo, nunca ao
+    # usuário final do StreamVault.
+    return redirect(current_app.config.get("IPTV_ADMIN_URL", "http://127.0.0.1:5000/admin/configuracoes"))
 
 
 @bp.route("/assistir/<content_id>")
@@ -466,16 +454,62 @@ def api_clear():
         return jsonify({"ok": False, "error": str(exc)}), 500
 
 
+@bp.route("/api/admin/config", methods=["GET", "POST"])
+def api_admin_config():
+    """Configuração da fonte IPTV exclusivamente para o painel administrativo."""
+    if not auth.is_admin_request():
+        return jsonify({"error": "Acesso administrativo obrigatório"}), 403
+
+    if request.method == "GET":
+        return jsonify({
+            "configured": iptv.is_configured(),
+            "type": config.Config.IPTV_TYPE,
+            "cache_minutes": config.Config.IPTV_CACHE_MINUTES,
+            "total": database.count_total(),
+            "channels": database.count_by_type("live"),
+            "movies": database.count_by_type("movie"),
+            "series": database.count_by_type("series"),
+            "last_loaded_at": database.get_setting("last_loaded_at"),
+        })
+
+    data = request.get_json(silent=True) or {}
+    action = data.get("action", "save")
+    if action == "refresh":
+        try:
+            return jsonify({"ok": True, **iptv.refresh(force=True)})
+        except Exception as exc:
+            logger.error("Erro ao atualizar lista via painel: %s", exc)
+            return jsonify({"ok": False, "error": "Não foi possível atualizar a lista."}), 502
+    if action == "clear":
+        database.clear_contents()
+        database.set_setting("last_loaded_at", "")
+        return jsonify({"ok": True, "total": 0, "channels": 0, "movies": 0, "series": 0})
+
+    source = str(data.get("IPTV_M3U_URL", "")).strip()
+    provider_type = str(data.get("IPTV_TYPE", "m3u")).strip().lower()
+    try:
+        cache_minutes = max(1, min(1440, int(data.get("IPTV_CACHE_MINUTES", 30))))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Cache inválido."}), 400
+    if provider_type != "m3u":
+        return jsonify({"error": "Somente listas M3U estão disponíveis."}), 400
+    if not source or not (source.startswith(("http://", "https://")) or source.endswith((".m3u", ".m3u8"))):
+        return jsonify({"error": "Informe uma URL HTTP(S) ou um arquivo .m3u/.m3u8."}), 400
+    config.save_env({
+        "IPTV_TYPE": provider_type,
+        "IPTV_M3U_URL": source,
+        "IPTV_CACHE_MINUTES": cache_minutes,
+    })
+    return jsonify({"ok": True, "configured": True})
+
+
 @bp.route("/api/config", methods=["POST"])
 def api_config_post():
-    """Atualiza configurações do .env via página de Configurações."""
-    data = request.get_json(silent=True) or {}
-    allowed = {"IPTV_M3U_URL", "IPTV_TYPE", "IPTV_CACHE_MINUTES"}
-    updates = {}
-    for k, v in data.items():
-        if k in allowed:
-            updates[k] = v
-    if not updates:
-        return jsonify({"error": "Nada para atualizar"}), 400
-    config.save_env(updates)
-    return jsonify({"ok": True, "updates": list(updates.keys())})
+    # Endpoint legado: a configuração agora é exclusiva do painel administrativo.
+    return jsonify({"error": "Use o painel administrativo."}), 403
+
+
+@bp.route("/logout")
+def logout():
+    session.clear()
+    return redirect(current_app.config["IPTV_AUTH_RETURN_URL"])

@@ -5,15 +5,16 @@ garante que a lista IPTV esteja carregada (ou inicia a atualização em
 segundo plano) antes de servir a primeira requisição.
 """
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, request
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from . import config, database, routes, proxy
+from . import config, database, routes, proxy, auth
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
+    app.config.from_object(config.Config)
     app.secret_key = config.Config.SECRET_KEY
 
     # Quando exposto atrás de um proxy reverso (nginx, Cloudflare, tunel),
@@ -21,6 +22,14 @@ def create_app() -> Flask:
     # X-Forwarded-*. Sem isso, o app pode enxergar HTTP onde o cliente usa
     # HTTPS e provocar loops de redirecionamento.
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+
+    @app.before_request
+    def require_iptv_login():
+        if request.endpoint == 'static' or request.path == '/favicon.ico':
+            return None
+        if request.path == '/api/admin/config' and auth.is_admin_request():
+            return None
+        return auth.require_access()
 
     # Garante que as tabelas existam.
     database.init_db()

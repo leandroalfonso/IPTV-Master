@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Configurações · IPTV Admin{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>Configurações IPTV</h1>
+    <p class="text-secondary">Gerencie a lista usada pelo StreamVault. Esta tela é exclusiva do administrador.</p>
+  </div>
+</div>
+
+{% if integration_error %}
+<div class="alert alert-danger">{{ integration_error }}</div>
+{% endif %}
+
+<div class="card-panel mb-4">
+  <h2><i class="bi bi-activity"></i> Status da lista</h2>
+  <div class="row g-3 text-center">
+    <div class="col-6 col-md-3"><strong>{{ status.get('total', 0) }}</strong><div class="text-secondary">Total</div></div>
+    <div class="col-6 col-md-3"><strong>{{ status.get('channels', 0) }}</strong><div class="text-secondary">Canais</div></div>
+    <div class="col-6 col-md-3"><strong>{{ status.get('movies', 0) }}</strong><div class="text-secondary">Filmes</div></div>
+    <div class="col-6 col-md-3"><strong>{{ status.get('series', 0) }}</strong><div class="text-secondary">Séries</div></div>
+  </div>
+  <hr>
+  <p class="mb-0 text-secondary">
+    Estado: <strong class="text-light">{{ 'configurada' if status.get('configured') else 'não configurada' }}</strong>
+    {% if status.get('last_loaded_at') %} · Última atualização: {{ status.get('last_loaded_at') }}{% endif %}
+  </p>
+</div>
+
+<div class="card-panel mb-4">
+  <h2><i class="bi bi-broadcast"></i> Inserir lista M3U</h2>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="save">
+    <div class="mb-3">
+      <label class="form-label" for="iptvUrl">URL da lista M3U ou caminho de arquivo</label>
+      <input class="form-control" id="iptvUrl" name="IPTV_M3U_URL" required
+             placeholder="https://exemplo.com/lista.m3u ou data/minha-lista.m3u"
+             autocomplete="off">
+      <div class="form-text">A URL é enviada somente ao StreamVault pelo canal administrativo e não é exibida aos usuários IPTV.</div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="cacheMinutes">Cache da lista (minutos)</label>
+      <input class="form-control" id="cacheMinutes" name="IPTV_CACHE_MINUTES" type="number" min="1" max="1440" value="{{ status.get('cache_minutes', 30) }}">
+    </div>
+    <button class="btn btn-primary" type="submit"><i class="bi bi-save"></i> Salvar configuração</button>
+  </form>
+</div>
+
+<div class="card-panel">
+  <h2><i class="bi bi-tools"></i> Operações</h2>
+  <div class="d-flex flex-wrap gap-2">
+    <form method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="refresh">
+      <button class="btn btn-outline-light" type="submit"><i class="bi bi-arrow-clockwise"></i> Atualizar lista agora</button>
+    </form>
+    <form method="post" onsubmit="return confirm('Limpar o cache de conteúdos?')">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="clear">
+      <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash"></i> Limpar cache</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

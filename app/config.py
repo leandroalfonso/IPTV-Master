@@ -18,6 +18,9 @@ class Config:
     BASE_DIR = BASE_DIR
 
     SECRET_KEY = os.getenv("SECRET_KEY", "streamvault-dev-secret-change-me")
+    IPTV_AUTH_SECRET = os.getenv("IPTV_AUTH_SECRET", "")
+    IPTV_AUTH_RETURN_URL = os.getenv("IPTV_AUTH_RETURN_URL", "http://127.0.0.1:5000/app/login")
+    IPTV_ADMIN_URL = os.getenv("IPTV_ADMIN_URL", "http://127.0.0.1:5000/admin/configuracoes")
 
     # Tipo de provedor da lista: "m3u" (padrão) ou "xtream".
     IPTV_TYPE = os.getenv("IPTV_TYPE", "m3u").lower()
@@ -57,6 +60,9 @@ def _reload_config() -> None:
     Chamamos isto após reescrever o .env para que a mudança surta efeito na hora.
     """
     setattr(Config, "SECRET_KEY", os.getenv("SECRET_KEY", "streamvault-dev-secret-change-me"))
+    setattr(Config, "IPTV_AUTH_SECRET", os.getenv("IPTV_AUTH_SECRET", ""))
+    setattr(Config, "IPTV_AUTH_RETURN_URL", os.getenv("IPTV_AUTH_RETURN_URL", "http://127.0.0.1:5000/app/login"))
+    setattr(Config, "IPTV_ADMIN_URL", os.getenv("IPTV_ADMIN_URL", "http://127.0.0.1:5000/admin/configuracoes"))
     setattr(Config, "IPTV_TYPE", os.getenv("IPTV_TYPE", "m3u").lower())
     setattr(Config, "IPTV_M3U_URL", os.getenv("IPTV_M3U_URL", ""))
     setattr(Config, "IPTV_USERNAME", os.getenv("IPTV_USERNAME", ""))
