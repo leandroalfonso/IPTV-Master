@@ -1,7 +1,9 @@
-from flask import Blueprint, request, jsonify
+import secrets
+from flask import Blueprint, request, jsonify, make_response
 from secrets import compare_digest
 from extensions import db
-from models import User
+from models import User, UserDevice
+from device_policy import can_claim_device
 from utils import log_access, utcnow
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
@@ -16,6 +18,23 @@ def user_json(user):
 def deny(reason, message, status=401, user=None):
     if user is not None: log_access(user.id, 'ACCESS_DENIED', False, request)
     return jsonify(success=False, authorized=False, reason=reason, message=message), status
+
+def request_device_id():
+    return (request.headers.get('X-Device-ID') or request.cookies.get('iptv_device_id') or '').strip()
+
+def claim_device(user):
+    device_id = request_device_id() or secrets.token_urlsafe(24)
+    active_ids = [row.device_id for row in UserDevice.query.filter_by(user_id=user.id, active=True).all()]
+    if not can_claim_device(active_ids, device_id, user.device_limit):
+        return None, deny('device_limit', 'Limite de dispositivos atingido.', 403, user)
+    device = UserDevice.query.filter_by(user_id=user.id, device_id=device_id).first()
+    if device is None:
+        device = UserDevice(user_id=user.id, device_id=device_id)
+        db.session.add(device)
+    device.active = True
+    device.last_seen = utcnow()
+    device.ip_address = request.remote_addr
+    return device_id, None
 
 def find_authorized(data):
     username=(data.get('username') or '').strip(); password=data.get('password') or ''; token=data.get('access_token') or request.headers.get('X-Access-Token') or ''
@@ -32,8 +51,12 @@ def find_authorized(data):
 def login_api():
     user, error=find_authorized(payload())
     if error: return error
+    device_id, error = claim_device(user)
+    if error: return error
     user.last_login=utcnow(); db.session.commit(); log_access(user.id,'TOKEN_VALIDATED',True,request)
-    return jsonify(success=True, authorized=True, user=user_json(user), username=user.username, expires_at=user.expires_at.isoformat(), days_remaining=user.days_remaining())
+    response = make_response(jsonify(success=True, authorized=True, user=user_json(user), username=user.username, expires_at=user.expires_at.isoformat(), days_remaining=user.days_remaining(), device_id=device_id))
+    response.set_cookie('iptv_device_id', device_id, max_age=60 * 60 * 24 * 365, httponly=True, samesite='Lax')
+    return response
 
 @api_bp.post('/validate')
 def validate_api(): return login_api()
