@@ -762,7 +762,8 @@ body.sv-cinema-mode .sv-player-page {
     /* Hero: altura proporcional; margens negativas zeradas — o body ja tem
        padding lateral e a soma (margem -16 + padding 16) estourava o viewport
        em 16px de scroll horizontal. */
-    .sv-hero { min-height: 320px; margin-left: 0; margin-right: 0; }
+    /* No mobile o header ocupa duas linhas; nao deixar o hero subir por tras da busca. */
+    .sv-hero { min-height: 320px; margin: 0; }
 
     /* Carrossel com scroll suave por gesto */
     .sv-carousel {
