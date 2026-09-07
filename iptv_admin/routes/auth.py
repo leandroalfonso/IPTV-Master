@@ -1,4 +1,3 @@
-from datetime import timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from extensions import db
@@ -23,18 +22,22 @@ def login():
             return redirect(url_for('admin.dashboard'))
         # 2) Conta de USUÁRIO -> app de filmes (handoff)
         user = User.query.filter_by(username=username).first()
-        if user and user.active and not user.is_expired() and user.check_password(password):
-            from routes.app import _handoff_token, _iptv_url
-            token = _handoff_token(user)
-            target = _iptv_url(user)
-            if token and target:
-                log_access(user.id, 'LOGIN', True, request)
-                return redirect(target)
-            error = 'Não foi possível gerar o acesso ao app.'
+        if user and user.active and not user.is_expired():
+            if user.check_password(password):
+                from routes.app import _handoff_token, _iptv_url
+                token = _handoff_token(user)
+                target = _iptv_url(user)
+                if token and target:
+                    log_access(user.id, 'LOGIN', True, request)
+                    return redirect(target)
+                error = 'Não foi possível gerar o acesso ao app.'
+            else:
+                error = 'Usuário ou senha inválidos.'
         elif user:
             error = 'Usuário bloqueado ou expirado.'
         else:
             error = 'Usuário ou senha inválidos.'
+        return render_template('auth/login.html', error=error), 401
     return render_template('auth/login.html', error=error)
 
 @auth_bp.post('/logout')
