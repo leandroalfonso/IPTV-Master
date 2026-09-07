@@ -1,234 +1,32 @@
-<!doctype html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b1020">
-  <title>Entrar · StreamVault</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="{{ url_for('static', filename='css/style.css', v='20260906-app-login') }}" rel="stylesheet">
-  <style>
-    :root {
-      --login-bg: #080d1a;
-      --login-surface: rgba(18, 26, 45, .82);
-      --login-surface-solid: #121a2d;
-      --login-line: rgba(157, 172, 191, .18);
-      --login-muted: #9dacbf;
-      --login-primary: #5b8cff;
-      --login-primary-dark: #3f70e8;
-    }
-    body.app-login-page {
-      min-height: 100vh;
-      min-height: 100dvh;
-      background: var(--login-bg);
-      overflow-x: hidden;
-    }
-    .app-login-page::before,
-    .app-login-page::after {
-      content: "";
-      position: fixed;
-      z-index: 0;
-      width: 34rem;
-      height: 34rem;
-      border-radius: 50%;
-      pointer-events: none;
-      filter: blur(12px);
-      opacity: .4;
-    }
-    .app-login-page::before {
-      top: -18rem;
-      right: -10rem;
-      background: radial-gradient(circle, rgba(91, 140, 255, .48), transparent 68%);
-    }
-    .app-login-page::after {
-      bottom: -20rem;
-      left: -12rem;
-      background: radial-gradient(circle, rgba(40, 200, 139, .18), transparent 68%);
-    }
-    .app-login-shell {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr);
-      gap: clamp(2rem, 7vw, 7rem);
-      align-items: center;
-      width: min(1120px, 100%);
-      min-height: 100vh;
-      min-height: 100dvh;
-      margin: 0 auto;
-      padding: 3rem clamp(1.25rem, 5vw, 4rem);
-    }
-    .app-login-showcase { max-width: 530px; }
-    .app-login-brand {
-      display: inline-flex;
-      align-items: center;
-      gap: .7rem;
-      color: #fff;
-      font-size: clamp(1.25rem, 2vw, 1.5rem);
-      font-weight: 800;
-      letter-spacing: -.03em;
-    }
-    .app-login-brand-mark {
-      display: grid;
-      place-items: center;
-      width: 2.65rem;
-      height: 2.65rem;
-      color: #fff;
-      background: linear-gradient(145deg, var(--login-primary), #7a5cff);
-      border-radius: .85rem;
-      box-shadow: 0 12px 32px rgba(91, 140, 255, .28);
-    }
-    .app-login-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: .45rem;
-      margin-top: clamp(3rem, 10vh, 7rem);
-      color: #93b2ff;
-      font-size: .74rem;
-      font-weight: 800;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-    }
-    .app-login-showcase h1 {
-      max-width: 510px;
-      margin: 1rem 0 1.25rem;
-      color: #fff;
-      font-size: clamp(2.35rem, 5vw, 4.7rem);
-      font-weight: 800;
-      letter-spacing: -.065em;
-      line-height: .98;
-    }
-    .app-login-showcase h1 span { color: #84a6ff; }
-    .app-login-showcase p {
-      max-width: 430px;
-      margin: 0;
-      color: var(--login-muted);
-      font-size: clamp(.98rem, 1.5vw, 1.08rem);
-      line-height: 1.7;
-    }
-    .app-login-highlights {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .65rem;
-      margin-top: 2rem;
-    }
-    .app-login-highlight {
-      display: inline-flex;
-      align-items: center;
-      gap: .45rem;
-      padding: .55rem .75rem;
-      color: #c7d4eb;
-      background: rgba(18, 26, 45, .58);
-      border: 1px solid var(--login-line);
-      border-radius: 999px;
-      font-size: .78rem;
-    }
-    .app-login-highlight i { color: #7fa2ff; }
-    .app-login-card {
-      width: 100%;
-      padding: clamp(1.45rem, 4vw, 2.5rem);
-      background: var(--login-surface);
-      border: 1px solid var(--login-line);
-      border-radius: 1.35rem;
-      box-shadow: 0 28px 80px rgba(0, 0, 0, .32), inset 0 1px rgba(255,255,255,.04);
-      backdrop-filter: blur(18px);
-    }
-    .app-login-card-head { margin-bottom: 1.65rem; }
-    .app-login-card h2 { margin: 0 0 .5rem; color: #fff; font-size: 1.55rem; font-weight: 750; letter-spacing: -.035em; }
-    .app-login-card-subtitle { margin: 0; color: var(--login-muted); font-size: .9rem; line-height: 1.5; }
-    .app-login-label { display: block; margin-bottom: .5rem; color: #dce6f7; font-size: .82rem; font-weight: 650; }
-    .app-login-field { position: relative; margin-bottom: 1.15rem; }
-    .app-login-field > i { position: absolute; top: 50%; left: 1rem; z-index: 2; color: #7892c5; transform: translateY(-50%); pointer-events: none; }
-    .app-login-field .form-control {
-      min-height: 3.25rem;
-      padding: .75rem 1rem .75rem 2.8rem;
-      color: #fff;
-      background: rgba(8, 13, 26, .58);
-      border: 1px solid rgba(157,172,191,.23);
-      border-radius: .8rem;
-    }
-    .app-login-field .form-control::placeholder { color: #71809a; }
-    .app-login-field .form-control:focus {
-      color: #fff;
-      background: rgba(8, 13, 26, .78);
-      border-color: var(--login-primary);
-      box-shadow: 0 0 0 .22rem rgba(91, 140, 255, .14);
-    }
-    .app-login-submit {
-      min-height: 3.25rem;
-      margin-top: .3rem;
-      color: #fff;
-      background: linear-gradient(135deg, var(--login-primary), var(--login-primary-dark));
-      border: 0;
-      border-radius: .8rem;
-      font-weight: 750;
-      box-shadow: 0 12px 24px rgba(63,112,232,.22);
-      transition: transform .2s ease, filter .2s ease;
-    }
-    .app-login-submit:hover { color: #fff; filter: brightness(1.08); transform: translateY(-1px); }
-    .app-login-submit:active { transform: translateY(0); }
-    .app-login-error { display: flex; gap: .6rem; align-items: flex-start; margin-bottom: 1.2rem; padding: .8rem .9rem; color: #ffd9de; background: rgba(255,107,122,.1); border: 1px solid rgba(255,107,122,.28); border-radius: .75rem; font-size: .85rem; }
-    .app-login-footnote { margin: 1.25rem 0 0; color: #71809a; font-size: .75rem; line-height: 1.5; text-align: center; }
-    @media (max-width: 800px) {
-      .app-login-shell { grid-template-columns: 1fr; gap: 2rem; max-width: 520px; padding-top: 2rem; padding-bottom: 2rem; }
-      .app-login-showcase { max-width: none; text-align: center; }
-      .app-login-kicker { margin-top: 2.2rem; }
-      .app-login-showcase h1 { margin-inline: auto; font-size: clamp(2.25rem, 11vw, 3.6rem); }
-      .app-login-showcase p { margin-inline: auto; }
-      .app-login-highlights { justify-content: center; }
-    }
-    @media (max-width: 480px) {
-      .app-login-shell { gap: 1.4rem; padding: 1.25rem 1rem 1.5rem; }
-      .app-login-brand-mark { width: 2.35rem; height: 2.35rem; }
-      .app-login-kicker { margin-top: 1.65rem; }
-      .app-login-showcase h1 { margin-top: .75rem; font-size: clamp(2rem, 11vw, 2.8rem); }
-      .app-login-showcase p { font-size: .92rem; line-height: 1.55; }
-      .app-login-highlights { gap: .45rem; margin-top: 1.3rem; }
-      .app-login-highlight { padding: .45rem .6rem; font-size: .72rem; }
-      .app-login-card { padding: 1.25rem; border-radius: 1.1rem; }
-      .app-login-card h2 { font-size: 1.35rem; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .app-login-submit { transition: none; }
-    }
-  </style>
-</head>
-<body class="app-login-page">
-  <main class="app-login-shell">
-    <section class="app-login-showcase" aria-labelledby="login-title">
-      <div class="app-login-brand"><span class="app-login-brand-mark"><i class="bi bi-play-fill"></i></span> StreamVault</div>
-      <div class="app-login-kicker"><i class="bi bi-stars"></i> Seu entretenimento, do seu jeito</div>
-      <h1 id="login-title">Tudo o que você quer assistir, <span>em um só lugar.</span></h1>
-      <p>Entre para acessar seu catálogo autorizado com uma experiência simples, rápida e confortável em qualquer tela.</p>
-      <div class="app-login-highlights" aria-label="Recursos">
-        <span class="app-login-highlight"><i class="bi bi-grid-3x3-gap-fill"></i> Catálogo organizado</span>
-        <span class="app-login-highlight"><i class="bi bi-phone"></i> Feito para mobile</span>
-      </div>
-    </section>
+{% extends 'base.html' %}
+{% block title %}Login · StreamVault{% endblock %}
+{% block public_content %}
+<main class="login-page app-login-page">
+  <section class="login-card" aria-labelledby="app-login-title">
+    <div class="brand justify-content-center mb-4">
+      <i class="bi bi-tv"></i> StreamVault
+    </div>
+    <h1 id="app-login-title">Acesso ao aplicativo</h1>
+    <p class="text-secondary">Entre para acessar seu catálogo IPTV autorizado.</p>
 
-    <section class="app-login-card" aria-labelledby="login-card-title">
-      <div class="app-login-card-head">
-        <h2 id="login-card-title">Bem-vindo de volta</h2>
-        <p class="app-login-card-subtitle">Use suas credenciais para continuar.</p>
-      </div>
-      {% if error %}<div class="app-login-error" role="alert"><i class="bi bi-exclamation-circle-fill"></i><span>{{ error }}</span></div>{% endif %}
-      <form method="post" novalidate>
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-        <label class="app-login-label" for="username">Usuário</label>
-        <div class="app-login-field">
-          <i class="bi bi-person" aria-hidden="true"></i>
-          <input class="form-control" id="username" name="username" autocomplete="username" placeholder="Digite seu usuário" required autofocus>
-        </div>
-        <label class="app-login-label" for="password">Senha</label>
-        <div class="app-login-field">
-          <i class="bi bi-lock" aria-hidden="true"></i>
-          <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required>
-        </div>
-        <button class="btn app-login-submit w-100" type="submit"><i class="bi bi-box-arrow-in-right me-2"></i>Entrar no aplicativo</button>
-      </form>
-      <p class="app-login-footnote"><i class="bi bi-shield-lock me-1"></i> Acesso protegido e exclusivo para usuários autorizados.</p>
-    </section>
-  </main>
-</body>
-</html>
+    {% if error %}
+      <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <label for="username">
+        Usuário
+        <input class="form-control" id="username" name="username" required autocomplete="username" autofocus>
+      </label>
+      <label for="password">
+        Senha
+        <input class="form-control" id="password" name="password" type="password" required autocomplete="current-password">
+      </label>
+      <button class="btn btn-primary w-100 mt-3" type="submit">
+        <i class="bi bi-box-arrow-in-right"></i> Entrar
+      </button>
+    </form>
+  </section>
+</main>
+{% endblock %}
