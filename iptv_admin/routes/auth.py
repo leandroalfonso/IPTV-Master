@@ -2,7 +2,7 @@ from datetime import timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from extensions import db
-from models import Admin
+from models import Admin, User
 from utils import csrf_protect, log_access, utcnow
 
 auth_bp = Blueprint('auth', __name__)
@@ -12,16 +12,30 @@ auth_bp = Blueprint('auth', __name__)
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('admin.dashboard'))
+    error = None
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
-        password = request.form.get('password', '')
+        password = request.form.get('password', '').strip()
+        # 1) Conta de ADMIN -> painel administrativo
         admin = Admin.query.filter_by(username=username).first()
         if admin and admin.active and admin.check_password(password):
             admin.last_login = utcnow(); db.session.commit(); login_user(admin, remember=False)
-            flash('Login realizado com sucesso.', 'success')
             return redirect(url_for('admin.dashboard'))
-        flash('Usuário ou senha inválidos.', 'danger')
-    return render_template('login.html')
+        # 2) Conta de USUÁRIO -> app de filmes (handoff)
+        user = User.query.filter_by(username=username).first()
+        if user and user.active and not user.is_expired() and user.check_password(password):
+            from routes.app import _handoff_token, _iptv_url
+            token = _handoff_token(user)
+            target = _iptv_url(user)
+            if token and target:
+                log_access(user.id, 'LOGIN', True, request)
+                return redirect(target)
+            error = 'Não foi possível gerar o acesso ao app.'
+        elif user:
+            error = 'Usuário bloqueado ou expirado.'
+        else:
+            error = 'Usuário ou senha inválidos.'
+    return render_template('auth/login.html', error=error)
 
 @auth_bp.post('/logout')
 @login_required

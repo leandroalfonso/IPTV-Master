@@ -69,38 +69,24 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
+        # 1) Conta de ADMIN logando pela tela do app -> vai para o painel
+        from models import Admin
+        admin = Admin.query.filter_by(username=username).first()
+        if admin and admin.active and admin.check_password(password):
+            return redirect(url_for('auth.login'))
+        # 2) Conta de USUÁRIO -> app de filmes (handoff)
         user = User.query.filter_by(username=username).first()
-        # Fallback: aceita também a conta de ADMIN no login do app, criando
-        # um usuário espelho (mesmo username + hash) para não confundir o usuário
-        # que tem apenas a credencial do painel.
-        if (not user) and username:
-            from models import Admin
-            admin = Admin.query.filter_by(username=username).first()
-            if admin and admin.active and admin.check_password(password):
-                user = User.query.filter_by(username=username).first()
-                if not user:
-                    from datetime import timedelta
-                    user = User(
-                        username=admin.username,
-                        name=admin.username,
-                        active=True,
-                        device_limit=99,
-                        expires_at=utcnow() + timedelta(days=3650),
-                    )
-                    user.password_hash = admin.password_hash
-                    db.session.add(user)
-                    db.session.commit()
         if not user or not user.check_password(password):
             error = 'Usuário ou senha inválidos.'
             if user:
                 log_access(user.id, 'LOGIN_FAILED', False, request)
-            return render_template('app/login.html', error=error), 401
+            return render_template('auth/login.html', error=error), 401
         if not user.active:
             log_access(user.id, 'ACCESS_DENIED', False, request)
-            return render_template('app/login.html', error='Usuário bloqueado.'), 403
+            return render_template('auth/login.html', error='Usuário bloqueado.'), 403
         if user.is_expired():
             log_access(user.id, 'ACCESS_DENIED', False, request)
-            return render_template('app/login.html', error='Acesso expirado.'), 403
+            return render_template('auth/login.html', error='Acesso expirado.'), 403
         device_id = claim_device_id(user)
         session.clear()
         session['app_user_id'] = user.id
@@ -115,7 +101,7 @@ def login():
             response = redirect(url_for('user_app.home'))
         response.set_cookie('iptv_device_id', device_id, max_age=60 * 60 * 24 * 365, httponly=True, samesite='Lax')
         return response
-    return render_template('app/login.html', error=error)
+    return render_template('auth/login.html', error=error)
 
 
 @app_bp.get('', strict_slashes=False)
