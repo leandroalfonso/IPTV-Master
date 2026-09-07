@@ -1,32 +1,77 @@
 {% extends 'base.html' %}
-{% block title %}Login · StreamVault{% endblock %}
+{% block title %}Entrar · StreamVault{% endblock %}
 {% block public_content %}
-<main class="login-page app-login-page">
-  <section class="login-card" aria-labelledby="app-login-title">
-    <div class="brand justify-content-center mb-4">
-      <i class="bi bi-tv"></i> StreamVault
+<style>
+  .sv-login{display:grid;grid-template-columns:1.1fr .9fr;min-height:100vh;background:
+    radial-gradient(1200px 600px at 12% -10%, #1b2c57 0%, transparent 55%),
+    radial-gradient(900px 500px at 110% 20%, #15324f 0%, transparent 50%),
+    var(--bg);}
+  .sv-hero{padding:56px 48px;display:flex;flex-direction:column;justify-content:center;color:var(--text);position:relative;overflow:hidden}
+  .sv-hero .sv-logo{display:flex;align-items:center;gap:12px;font-size:1.7rem;font-weight:900;letter-spacing:.3px}
+  .sv-hero .sv-logo i{font-size:2.1rem;color:var(--primary)}
+  .sv-hero h1{font-size:clamp(2rem,3.4vw,2.9rem);font-weight:900;margin:34px 0 14px;line-height:1.1}
+  .sv-hero h1 span{background:linear-gradient(90deg,#7aa2ff,#28c88b);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sv-hero p.lead{color:var(--muted);font-size:1.05rem;max-width:460px}
+  .sv-feats{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:36px;max-width:480px}
+  .sv-feat{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .sv-feat i{font-size:1.4rem;color:var(--primary)}
+  .sv-feat small{display:block;color:var(--muted);margin-top:8px;font-size:.86rem}
+  .sv-glow{position:absolute;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,#5b8cff33,transparent 70%);top:-90px;right:-90px;filter:blur(10px)}
+  .sv-panel{display:grid;place-items:center;padding:32px 22px;background:rgba(8,13,26,.55);backdrop-filter:blur(6px)}
+  .sv-card{width:min(100%,400px);background:rgba(18,26,45,.96);border:1px solid var(--line);border-radius:22px;padding:34px;box-shadow:0 24px 80px rgba(0,0,0,.45)}
+  .sv-card .brand{justify-content:center;font-size:1.3rem;margin-bottom:6px}
+  .sv-card .brand i{color:var(--primary);font-size:1.6rem}
+  .sv-card h2{font-size:1.35rem;text-align:center;margin:4px 0 4px}
+  .sv-card .sub{text-align:center;color:var(--muted);font-size:.92rem;margin-bottom:22px}
+  .sv-card label{margin-top:16px}
+  .sv-card .form-control{min-height:48px;font-size:1rem}
+  .sv-card .btn-primary{margin-top:24px;min-height:50px;font-weight:800;font-size:1.02rem;display:flex;align-items:center;justify-content:center;gap:8px}
+  .sv-foot{text-align:center;color:var(--muted);font-size:.82rem;margin-top:18px}
+  @media(max-width:860px){.sv-login{grid-template-columns:1fr}.sv-hero{display:none}}
+</style>
+
+<main class="sv-login">
+  <section class="sv-hero">
+    <div class="sv-glow"></div>
+    <div class="sv-logo"><i class="bi bi-tv"></i> StreamVault</div>
+    <h1>Sua TV ao vivo, <span>onde você estiver.</span></h1>
+    <p class="lead">Acesse seu catálogo IPTV autorizado: canais ao vivo, filmes e séries em um só lugar, com player integrado e qualidade adaptativa.</p>
+    <div class="sv-feats">
+      <div class="sv-feat"><i class="bi bi-broadcast"></i><small>Canais ao vivo em HD/4K</small></div>
+      <div class="sv-feat"><i class="bi bi-film"></i><small>Filmes e séries sob demanda</small></div>
+      <div class="sv-feat"><i class="bi bi-phone"></i><small>App responsivo no celular</small></div>
+      <div class="sv-feat"><i class="bi bi-shield-lock"></i><small>Acesso seguro e autorizado</small></div>
     </div>
-    <h1 id="app-login-title">Acesso ao aplicativo</h1>
-    <p class="text-secondary">Entre para acessar seu catálogo IPTV autorizado.</p>
+  </section>
 
-    {% if error %}
-      <div class="alert alert-danger" role="alert">{{ error }}</div>
-    {% endif %}
+  <section class="sv-panel">
+    <div class="sv-card">
+      <div class="brand"><i class="bi bi-tv"></i> StreamVault</div>
+      <h2>Acesse sua conta</h2>
+      <p class="sub">Entre para abrir seu catálogo</p>
 
-    <form method="post" novalidate>
-      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-      <label for="username">
-        Usuário
-        <input class="form-control" id="username" name="username" required autocomplete="username" autofocus>
-      </label>
-      <label for="password">
-        Senha
-        <input class="form-control" id="password" name="password" type="password" required autocomplete="current-password">
-      </label>
-      <button class="btn btn-primary w-100 mt-3" type="submit">
-        <i class="bi bi-box-arrow-in-right"></i> Entrar
-      </button>
-    </form>
+      {% if error %}
+        <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+          <i class="bi bi-exclamation-triangle-fill"></i> {{ error }}
+        </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <label for="username">
+          Usuário
+          <input class="form-control" id="username" name="username" required autocomplete="username" autofocus>
+        </label>
+        <label for="password">
+          Senha
+          <input class="form-control" id="password" name="password" type="password" required autocomplete="current-password">
+        </label>
+        <button class="btn btn-primary w-100" type="submit">
+          <i class="bi bi-box-arrow-in-right"></i> Entrar
+        </button>
+      </form>
+      <p class="sv-foot">Problemas para entrar? Peça seus dados de acesso ao administrador.</p>
+    </div>
   </section>
 </main>
 {% endblock %}
