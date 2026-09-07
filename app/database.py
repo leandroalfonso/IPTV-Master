@@ -117,7 +117,7 @@ _SORT_COLUMNS = {
 
 _MOVIE_VARIANT_PATTERNS = (
     ("Dublado", re.compile(r"(?<!\w)(?:dublado|dublados|dubbed|dub)(?!\w)", re.I)),
-    ("Legendado", re.compile(r"(?<!\w)(?:legendado|legendados|legendada|legendas?|subtitulado|subtitle|sub)(?!\w)", re.I)),
+    ("Legendado", re.compile(r"(?<!\w)(?:legendado|legendados|legendada|legendas?|leg|subtitulado|subtitle|sub)(?!\w)", re.I)),
 )
 
 
@@ -159,6 +159,10 @@ def group_movie_variants(rows: list[dict]) -> list[dict]:
 
     result = list(groups.values())
     for item in result:
+        if any(variant["label"] == "Legendado" for variant in item["variants"]):
+            for variant in item["variants"]:
+                if variant["label"] == "Assistir":
+                    variant["label"] = "Dublado"
         item["variants"].sort(
             key=lambda variant: {"Dublado": 0, "Legendado": 1, "Assistir": 2}.get(
                 variant["label"], 3

@@ -58,6 +58,33 @@ class MovieVariantGroupingTests(unittest.TestCase):
         self.assertEqual(len(grouped), 2)
         self.assertEqual({item["name"] for item in grouped}, {"O Exemplo", "O Exemplo 2"})
 
+    def test_leg_suffix_is_grouped_as_subtitled(self):
+        rows = [
+            {
+                "id": "dub-1978",
+                "name": "1978",
+                "type": "movie",
+                "url": "https://media.example/1978-dub.mp4",
+                "category": "Filmes",
+            },
+            {
+                "id": "leg-1978",
+                "name": "1978 LEG",
+                "type": "movie",
+                "url": "https://media.example/1978-leg.mp4",
+                "category": "Filmes",
+            },
+        ]
+
+        grouped = group_movie_variants(rows)
+
+        self.assertEqual(len(grouped), 1)
+        self.assertEqual(grouped[0]["name"], "1978")
+        self.assertEqual(
+            [(variant["label"], variant["id"]) for variant in grouped[0]["variants"]],
+            [("Dublado", "dub-1978"), ("Legendado", "leg-1978")],
+        )
+
     def test_movie_without_language_marker_keeps_one_default_variant(self):
         rows = [
             {
