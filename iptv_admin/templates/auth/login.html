@@ -2,23 +2,32 @@
 {% block title %}Entrar · StreamVault{% endblock %}
 {% block public_content %}
 <style>
+  /* Tema StreamVault (vermelho) — sobrescreve o tema azul do admin nesta tela */
+  :root{
+    --primary:#ff3b5c; --primary-soft:#ff6b85; --primary-glow:rgba(255,59,92,.45);
+    --bg:#0b0b10; --surface:#14141c; --surface2:#1c1c26; --line:#2a2a36;
+    --text:#ffffff; --muted:#a0a4ad; --success:#28c88b; --danger:#ff6b7a;
+  }
+  body{background:var(--bg)}
+  /* esconde o chrome do admin (topbar/sidebar) na tela de login */
+  .topbar{display:none !important}
   .sv-login{display:grid;grid-template-columns:1.1fr .9fr;min-height:100vh;background:
-    radial-gradient(1200px 600px at 12% -10%, #1b2c57 0%, transparent 55%),
-    radial-gradient(900px 500px at 110% 20%, #15324f 0%, transparent 50%),
+    radial-gradient(1200px 600px at 12% -10%, #3a1020 0%, transparent 55%),
+    radial-gradient(900px 500px at 110% 20%, #2a0f1a 0%, transparent 50%),
     var(--bg);}
   .sv-hero{padding:56px 48px;display:flex;flex-direction:column;justify-content:center;color:var(--text);position:relative;overflow:hidden}
   .sv-hero .sv-logo{display:flex;align-items:center;gap:12px;font-size:1.7rem;font-weight:900;letter-spacing:.3px}
   .sv-hero .sv-logo i{font-size:2.1rem;color:var(--primary)}
   .sv-hero h1{font-size:clamp(2rem,3.4vw,2.9rem);font-weight:900;margin:34px 0 14px;line-height:1.1}
-  .sv-hero h1 span{background:linear-gradient(90deg,#7aa2ff,#28c88b);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sv-hero h1 span{background:linear-gradient(90deg,#ff6b85,#ff3b5c);-webkit-background-clip:text;background-clip:text;color:transparent}
   .sv-hero p.lead{color:var(--muted);font-size:1.05rem;max-width:460px}
   .sv-feats{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:36px;max-width:480px}
   .sv-feat{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;padding:16px}
   .sv-feat i{font-size:1.4rem;color:var(--primary)}
   .sv-feat small{display:block;color:var(--muted);margin-top:8px;font-size:.86rem}
-  .sv-glow{position:absolute;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,#5b8cff33,transparent 70%);top:-90px;right:-90px;filter:blur(10px)}
-  .sv-panel{display:grid;place-items:center;padding:32px 22px;background:rgba(8,13,26,.55);backdrop-filter:blur(6px)}
-  .sv-card{width:min(100%,400px);background:rgba(18,26,45,.96);border:1px solid var(--line);border-radius:22px;padding:34px;box-shadow:0 24px 80px rgba(0,0,0,.45)}
+  .sv-glow{position:absolute;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,#ff3b5c44,transparent 70%);top:-90px;right:-90px;filter:blur(10px)}
+  .sv-panel{display:grid;place-items:center;padding:32px 22px;background:rgba(11,11,16,.55);backdrop-filter:blur(6px)}
+  .sv-card{width:min(100%,400px);background:rgba(20,20,28,.96);border:1px solid var(--line);border-radius:22px;padding:34px;box-shadow:0 24px 80px rgba(0,0,0,.45)}
   .sv-card .brand{justify-content:center;font-size:1.3rem;margin-bottom:6px}
   .sv-card .brand i{color:var(--primary);font-size:1.6rem}
   .sv-card h2{font-size:1.35rem;text-align:center;margin:4px 0 4px}
