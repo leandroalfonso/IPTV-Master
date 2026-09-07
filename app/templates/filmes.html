@@ -14,19 +14,28 @@
 
     <div class="sv-chips" id="catChips">
         <button class="sv-chip active" data-cat="">Todos</button>
-        {% for c in categories %}
-        <button class="sv-chip" data-cat="{{ c.name }}">{{ c.name }}</button>
-        {% endfor %}
+        {% for c in categories %}<button class="sv-chip" data-cat="{{ c.name }}">{{ c.name }}</button>{% endfor %}
+    </div>
+
+    <div class="sv-chips sv-cert-chips" id="certChips">
+        <button class="sv-chip {% if not active_cert %}active{% endif %}" data-cert="">Faixa etária: Todas</button>
+        <button class="sv-chip {% if active_cert == 'L' %}active{% endif %}" data-cert="L">Livre</button>
+        <button class="sv-chip {% if active_cert == '10' %}active{% endif %}" data-cert="10">10</button>
+        <button class="sv-chip {% if active_cert == '12' %}active{% endif %}" data-cert="12">12</button>
+        <button class="sv-chip {% if active_cert == '14' %}active{% endif %}" data-cert="14">14</button>
+        <button class="sv-chip {% if active_cert == '16' %}active{% endif %}" data-cert="16">16</button>
+        <button class="sv-chip {% if active_cert == '18' %}active{% endif %}" data-cert="18">18</button>
     </div>
 
     <div class="row g-3" id="movieGrid">
         {% for m in items %}
-        <div class="col-6 col-sm-4 col-md-3 col-lg-2 sv-col" data-cat="{{ m.category }}">
+        <div class="col-6 col-sm-4 col-md-3 col-lg-2 sv-col" data-cat="{{ m.category }}" data-cert="{{ m.certification or '' }}">
             <div class="sv-card sv-movie-card" data-id="{{ m.id }}">
                 <a href="/detalhes/{{ m.id }}" class="sv-card-link">
                     <div class="sv-thumb">
                         {{ sv_img(m.logo, m.name) }}
                         <div class="sv-thumb-fallback"><i class="bi bi-film"></i></div>
+                        {% if m.certification %}<span class="sv-cert-badge" title="Classificação indicativa">{{ m.certification }}</span>{% endif %}
                         
                         <div class="sv-card-overlay">
                             <div class="sv-card-overlay-content">
@@ -37,6 +46,7 @@
                                 <div class="sv-ov-meta">
                                     {%- if m.year %}<span class="sv-meta-item"><i class="bi bi-calendar"></i> {{ m.year }}</span>{% endif -%}
                                     {%- if m.duration %}<span class="sv-meta-item"><i class="bi bi-clock"></i> {{ m.duration }}</span>{% elif m.runtime %}<span class="sv-meta-item"><i class="bi bi-clock"></i> {{ (m.runtime // 60) | int }}h{{ '%02d' | format(m.runtime % 60) }}</span>{% endif -%}
+                                    {%- if m.certification %}<span class="sv-meta-item"><i class="bi bi-shield-check"></i> {{ m.certification }}</span>{% endif -%}
                                     {%- if (m.genres or []) | length %}<span class="sv-meta-item"><i class="bi bi-tag"></i> {{ (m.genres or [])[0] }}</span>{% endif -%}
                                 </div>
                             </div>
@@ -74,18 +84,33 @@
 {% endblock %}
 {% block scripts %}
 <script>
+let activeCat = "";
+let activeCert = "";
+function applyMovieFilters() {
+    let shown = 0;
+    document.querySelectorAll('#movieGrid .sv-col').forEach(col => {
+        const okCat = !activeCat || col.dataset.cat === activeCat;
+        const okCert = !activeCert || col.dataset.cert === activeCert;
+        const ok = okCat && okCert;
+        col.style.display = ok ? '' : 'none';
+        if (ok) shown++;
+    });
+    document.getElementById('movieEmpty').classList.toggle('d-none', shown > 0);
+}
 document.querySelectorAll('#catChips .sv-chip').forEach(chip => {
     chip.addEventListener('click', () => {
         document.querySelectorAll('#catChips .sv-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
-        const cat = chip.dataset.cat;
-        let shown = 0;
-        document.querySelectorAll('#movieGrid .sv-col').forEach(col => {
-            const ok = !cat || col.dataset.cat === cat;
-            col.style.display = ok ? '' : 'none';
-            if (ok) shown++;
-        });
-        document.getElementById('movieEmpty').classList.toggle('d-none', shown > 0);
+        activeCat = chip.dataset.cat;
+        applyMovieFilters();
+    });
+});
+document.querySelectorAll('#certChips .sv-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('#certChips .sv-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        activeCert = chip.dataset.cert;
+        applyMovieFilters();
     });
 });
 </script>

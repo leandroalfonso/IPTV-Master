@@ -148,6 +148,19 @@ def _movie_variant(name: str, group_name: str = "") -> tuple[str, str]:
     return key or "sem nome", label
 
 
+def _row_cert(row: dict) -> str:
+    """Lê a faixa etária (certification) do metadata TMDB de uma linha."""
+    meta = row.get("metadata") if row.get("metadata") else None
+    if not meta:
+        return ""
+    try:
+        data = json.loads(meta)
+    except (TypeError, ValueError):
+        return ""
+    tm = (data or {}).get("tmdb") or {}
+    return (tm.get("certification") or "").strip()
+
+
 def group_movie_variants(rows: list[dict]) -> list[dict]:
     """Agrupa versões de filmes, mantendo cada URL como uma opção."""
     groups = {}
@@ -202,6 +215,7 @@ def query_contents(
     page: int = 1,
     limit: int = 40,
     sort: str = "name",
+    cert: Optional[str] = None,
 ):
     """Consulta paginada de conteúdos com filtros e ordenação.
 
@@ -234,7 +248,10 @@ def query_contents(
         # Agrupa antes da paginação para que uma versão não consuma o lugar
         # da outra e para que o total represente cards, não URLs duplicadas.
         cur.execute(f"SELECT * FROM contents{where_sql} ORDER BY {order}", params)
-        items = group_movie_variants([dict(r) for r in cur.fetchall()])
+        rows = [dict(r) for r in cur.fetchall()]
+        if cert:
+            rows = [r for r in rows if _row_cert(r) == cert]
+        items = group_movie_variants(rows)
         total = len(items)
         items = items[offset:offset + limit]
     else:

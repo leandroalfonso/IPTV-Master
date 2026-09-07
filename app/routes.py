@@ -143,7 +143,7 @@ def index():
     series = database.get_series_list(limit=20)
     most_watched = tmdb.hydrate(database.get_most_watched(limit=20))
     recently_added = tmdb.hydrate(database.get_recently_added(limit=20))
-    top_rated = tmdb.hydrate(database.get_top_rated(limit=20))
+    top_rated = tmdb.hydrate(database.get_top_rated(typ="movie", limit=20))
     categories = database.get_categories()[:18]
 
     return render_template(
@@ -176,11 +176,12 @@ def canais():
 @bp.route("/filmes")
 def filmes():
     categories = database.get_categories("movie")
-    rows = database.query_contents(typ="movie", limit=24, page=1)
+    cert = request.args.get("cert") or ""
+    rows = database.query_contents(typ="movie", limit=24, page=1, cert=cert)
     items = tmdb.hydrate(rows["items"])
     return render_template(
         "filmes.html", categories=categories, items=items,
-        configured=iptv.is_configured(),
+        configured=iptv.is_configured(), active_cert=cert,
     )
 
 

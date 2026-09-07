@@ -23,11 +23,12 @@
 {%- endmacro %}
 
 {% macro movie_card(m) -%}
-<div class="sv-card sv-movie-card" data-id="{{ m.id }}">
+<div class="sv-card sv-movie-card" data-id="{{ m.id }}" data-cert="{{ m.certification or '' }}">
     <a href="/detalhes/{{ m.id }}" class="sv-card-link" aria-label="Detalhes de {{ m.name }}">
         <div class="sv-thumb">
             {{ sv_img(m.logo, m.name) }}
             <div class="sv-thumb-fallback"><i class="bi bi-film"></i></div>
+            {% if m.certification %}<span class="sv-cert-badge" title="Classificação indicativa">{{ m.certification }}</span>{% endif %}
             
             <div class="sv-card-overlay">
                 <div class="sv-card-overlay-content">
@@ -38,6 +39,7 @@
                     <div class="sv-ov-meta">
                         {% if m.year %}<span class="sv-meta-item"><i class="bi bi-calendar"></i> {{ m.year }}</span>{% endif %}
                         {% if m.duration %}<span class="sv-meta-item"><i class="bi bi-clock"></i> {{ m.duration }}</span>{% endif %}
+                        {% if m.certification %}<span class="sv-meta-item"><i class="bi bi-shield-check"></i> {{ m.certification }}</span>{% endif %}
                         {%- if (m.genres or []) | length %}<span class="sv-meta-item"><i class="bi bi-tag"></i> {{ (m.genres or [])[0] }}</span>{% endif -%}
                     </div>
                 </div>

@@ -423,6 +423,25 @@ body.sv-cinema-mode .sv-player-page {
     font-size: 0.8rem; font-weight: 700; color: var(--accent);
 }
 
+/* Classificação indicativa (faixa etária) no pôster do card */
+.sv-cert-badge {
+    position: absolute; top: 8px; left: 8px; z-index: 4;
+    background: rgba(8,9,13,.82); color: #fff;
+    font-size: 0.72rem; font-weight: 800; line-height: 1;
+    padding: 4px 7px; border-radius: 6px;
+    border: 1px solid rgba(255,255,255,.18);
+    backdrop-filter: blur(4px);
+    letter-spacing: .3px;
+}
+.sv-cert-badge:empty { display: none; }
+/* Cores por faixa (padrão BR) */
+.sv-cert-badge[data-cert="L"] { background: rgba(46,160,67,.92); border-color: transparent; }
+.sv-cert-badge[data-cert="10"] { background: rgba(33,150,243,.92); border-color: transparent; }
+.sv-cert-badge[data-cert="12"] { background: rgba(255,179,0,.95); border-color: transparent; color: #1a1300; }
+.sv-cert-badge[data-cert="14"] { background: rgba(245,124,0,.95); border-color: transparent; }
+.sv-cert-badge[data-cert="16"] { background: rgba(229,57,53,.95); border-color: transparent; }
+.sv-cert-badge[data-cert="18"] { background: rgba(142,36,170,.95); border-color: transparent; }
+
 .sv-card-sub { font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sv-progress {
     position: absolute; bottom: 0; left: 0; height: 5px; background: var(--accent);

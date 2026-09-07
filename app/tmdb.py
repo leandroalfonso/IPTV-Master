@@ -73,6 +73,44 @@ def _search_movie(title: str) -> dict | None:
     return results[0]
 
 
+# Faixas etárias suportadas (padrão brasileiro). Usadas no badge e no filtro.
+CERT_LABELS = {"L": "Livre", "10": "10", "12": "12", "14": "14", "16": "16", "18": "18"}
+
+
+def normalize_cert(raw: str) -> str:
+    """Converte a certificação crua do TMDB (BR/US) numa faixa conhecida."""
+    if not raw:
+        return ""
+    r = raw.strip().upper()
+    mapping = {
+        "L": "L", "LIVRE": "L", "G": "L", "TV-Y": "L", "TV-G": "L", "TV-Y7": "L",
+        "10": "10", "10+": "10", "PG": "10", "TV-PG": "10", "TV-Y7-FV": "10",
+        "12": "12", "PG-13": "12",
+        "14": "14", "TV-14": "14",
+        "16": "16", "R": "16",
+        "18": "18", "NC-17": "18", "TV-MA": "18",
+    }
+    return mapping.get(r, "")
+
+
+def _fetch_certification(movie_id: int) -> str:
+    """Classificação indicativa (BR preferencial, fallback US)."""
+    try:
+        data = _get(f"/movie/{movie_id}/release_dates", {})
+    except Exception:
+        return ""
+    results = data.get("results") or []
+    for iso in ("BR", "US"):
+        for entry in results:
+            if entry.get("iso_3166_1") != iso:
+                continue
+            for rd in entry.get("release_dates") or []:
+                c = (rd.get("certification") or "").strip()
+                if c:
+                    return normalize_cert(c)
+    return ""
+
+
 def _fetch_tmdb(content: dict) -> dict | None:
     """Busca os dados do TMDB para um item (content) do tipo movie."""
     found = _search_movie(_clean_title(content.get("name", "")))
@@ -94,6 +132,7 @@ def _fetch_tmdb(content: dict) -> dict | None:
         "year": (det.get("release_date") or "")[:4],
         "runtime": det.get("runtime") or 0,
         "genres": [g["name"] for g in (det.get("genres") or [])],
+        "certification": _fetch_certification(found["id"]),
         "backdrop": backdrop,
         "poster": poster,
         "original_title": det.get("original_title") or "",
@@ -160,6 +199,7 @@ def hydrate(items: list[dict]) -> list[dict]:
         if tm:
             d["year"] = tm.get("year") or d.get("year")
             d["rating"] = tm.get("rating") or d.get("rating")
+            d["certification"] = tm.get("certification") or d.get("certification") or ""
             mins = tm.get("runtime") or 0
             if mins:
                 d["duration"] = f"{mins // 60}h{mins % 60:02d}"
