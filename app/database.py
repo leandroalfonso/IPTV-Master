@@ -554,9 +554,11 @@ def get_most_watched(typ: str = None, limit: int = 20) -> list:
     return rows
 
 
-def get_top_rated(typ: str = None, limit: int = 20) -> list:
+def get_top_rated(typ: str = "movie", limit: int = 20) -> list:
     """Mais rankeados por estrelas/pontuação (TMDB vote_average + vote_count).
 
+    Por padrão traz apenas filmes (typ="movie") — canais ao vivo e séries são
+    excluídos explicitamente para não poluir o carrossel de rankeados.
     Lê o rating hidratado do metadata; ignora itens sem nota. Ordena por
     nota (estrelas) decrescente e, como desempate, por número de votos
     (pontuação/popularidade da avaliação). Desduplica filmes por título-base
@@ -569,6 +571,9 @@ def get_top_rated(typ: str = None, limit: int = 20) -> list:
     if typ:
         q += " AND type = ?"
         params.append(typ)
+    else:
+        # defesa extra: nunca incluir ao vivo nem séries se tipagem vier solta
+        q += " AND type NOT IN ('live', 'series')"
     cur.execute(q, params)
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()
