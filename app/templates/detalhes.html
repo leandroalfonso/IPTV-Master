@@ -51,7 +51,20 @@
             {% endif %}
 
             <div class="sv-detail-actions">
+                {% if movie_variants|length > 1 %}
+                <div class="sv-movie-variants w-100 mb-3">
+                    <div class="text-secondary small mb-2"><i class="bi bi-translate"></i> Escolha a versão</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for variant in movie_variants %}
+                        <a href="/assistir/{{ variant.id }}" class="btn {% if variant.id == item.id %}sv-btn-primary{% else %}sv-btn-ghost{% endif %}">
+                            <i class="bi bi-play-fill"></i> {{ variant.label }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
                 <a href="/assistir/{{ item.id }}" class="btn sv-btn-primary"><i class="bi bi-play-fill"></i> Assistir</a>
+                {% endif %}
                 <button class="btn sv-btn-ghost sv-fav" data-id="{{ item.id }}" data-type="{{ item.type }}" data-name="{{ item.name }}" data-logo="{{ item.logo }}" data-url="{{ item.url }}">
                     <i class="bi {% if is_fav %}bi-check2{% else %}bi-plus-lg{% endif %}"></i>
                     <span>{% if is_fav %}Na minha lista{% else %}Minha Lista{% endif %}</span>

@@ -260,6 +260,13 @@ def detalhes(content_id):
     item = database.get_content(content_id)
     if not item:
         abort(404)
+    movie_variants = []
+    if item["type"] == "movie":
+        movie_group = database.get_movie_group(content_id)
+        if movie_group:
+            movie_variants = movie_group["variants"]
+            # O título exibido é o título-base, sem repetir Dublado/Legendado.
+            item = {**item, "name": movie_group["name"]}
     episodes = []
     if item["type"] == "series" and item.get("series_name"):
         episodes = database.get_series_episodes(item["series_name"])
@@ -268,7 +275,8 @@ def detalhes(content_id):
     tmdb_meta = tmdb.get_tmdb(item) if item["type"] == "movie" else None
     return render_template(
         "detalhes.html", item=item, episodes=episodes, is_fav=is_fav,
-        tmdb_meta=tmdb_meta, configured=iptv.is_configured(),
+        movie_variants=movie_variants, tmdb_meta=tmdb_meta,
+        configured=iptv.is_configured(),
     )
 
 

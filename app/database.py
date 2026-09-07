@@ -7,6 +7,8 @@ Usa consultas parametrizadas em todo lugar para evitar SQL injection.
 import os
 import sqlite3
 import json
+import re
+import unicodedata
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -113,6 +115,81 @@ _SORT_COLUMNS = {
     "name": "name ASC",
 }
 
+_MOVIE_VARIANT_PATTERNS = (
+    ("Dublado", re.compile(r"(?<!\w)(?:dublado|dublados|dubbed|dub)(?!\w)", re.I)),
+    ("Legendado", re.compile(r"(?<!\w)(?:legendado|legendados|legendada|legendas?|subtitulado|subtitle|sub)(?!\w)", re.I)),
+)
+
+
+def _movie_base_title(name: str, group_name: str = "") -> tuple[str, str]:
+    title = str(name or "Sem nome").strip()
+    label = None
+    for candidate, pattern in _MOVIE_VARIANT_PATTERNS:
+        if pattern.search(title):
+            label = candidate
+            title = pattern.sub(" ", title)
+            break
+    if label is None:
+        for candidate, pattern in _MOVIE_VARIANT_PATTERNS:
+            if pattern.search(str(group_name or "")):
+                label = candidate
+                break
+    title = re.sub(r"[\[\](){}]", " ", title)
+    title = re.sub(r"\s+[-|/]\s+", " ", title)
+    return re.sub(r"\s+", " ", title).strip(" -|/."), label or "Assistir"
+
+
+def _movie_variant(name: str, group_name: str = "") -> tuple[str, str]:
+    """Retorna (chave normalizada, rótulo da versão) de um filme."""
+    title, label = _movie_base_title(name, group_name)
+    normalized = unicodedata.normalize("NFKD", title)
+    normalized = "".join(char for char in normalized if not unicodedata.combining(char))
+    key = re.sub(r"[^a-z0-9]+", " ", normalized.casefold()).strip()
+    return key or "sem nome", label
+
+
+def group_movie_variants(rows: list[dict]) -> list[dict]:
+    """Agrupa versões de filmes, mantendo cada URL como uma opção."""
+    groups = {}
+    for row in rows:
+        key, label = _movie_variant(row.get("name"), row.get("group_name"))
+        if key not in groups:
+            groups[key] = {**row, "variants": []}
+        groups[key]["variants"].append({**row, "label": label})
+
+    result = list(groups.values())
+    for item in result:
+        item["variants"].sort(
+            key=lambda variant: {"Dublado": 0, "Legendado": 1, "Assistir": 2}.get(
+                variant["label"], 3
+            )
+        )
+        preferred = item["variants"][0]
+        for field in ("id", "url", "logo", "category", "group_name", "description"):
+            if preferred.get(field):
+                item[field] = preferred[field]
+        item["name"], _ = _movie_base_title(item.get("name"), item.get("group_name"))
+    return result
+
+
+def get_movie_group(content_id: str) -> Optional[dict]:
+    """Retorna o grupo completo do filme ao qual ``content_id`` pertence."""
+    conn = get_db()
+    rows = [dict(row) for row in conn.execute(
+        "SELECT * FROM contents WHERE type = 'movie' ORDER BY name ASC"
+    ).fetchall()]
+    conn.close()
+    for item in group_movie_variants(rows):
+        if any(variant.get("id") == content_id for variant in item["variants"]):
+            return item
+    return None
+
+
+def get_movie_variants(content_id: str) -> list[dict]:
+    """Retorna as versões do filme ao qual ``content_id`` pertence."""
+    group = get_movie_group(content_id)
+    return group["variants"] if group else []
+
 
 def query_contents(
     typ: Optional[str] = None,
@@ -147,16 +224,23 @@ def query_contents(
 
     where_sql = (" WHERE " + " AND ".join(where)) if where else ""
 
-    cur.execute(f"SELECT COUNT(*) FROM contents{where_sql}", params)
-    total = cur.fetchone()[0]
-
     order = _SORT_COLUMNS.get(sort, "name ASC")
     offset = max(0, (page - 1) * limit)
-    cur.execute(
-        f"SELECT * FROM contents{where_sql} ORDER BY {order} LIMIT ? OFFSET ?",
-        params + [limit, offset],
-    )
-    items = [dict(r) for r in cur.fetchall()]
+    if typ == "movie":
+        # Agrupa antes da paginação para que uma versão não consuma o lugar
+        # da outra e para que o total represente cards, não URLs duplicadas.
+        cur.execute(f"SELECT * FROM contents{where_sql} ORDER BY {order}", params)
+        items = group_movie_variants([dict(r) for r in cur.fetchall()])
+        total = len(items)
+        items = items[offset:offset + limit]
+    else:
+        cur.execute(f"SELECT COUNT(*) FROM contents{where_sql}", params)
+        total = cur.fetchone()[0]
+        cur.execute(
+            f"SELECT * FROM contents{where_sql} ORDER BY {order} LIMIT ? OFFSET ?",
+            params + [limit, offset],
+        )
+        items = [dict(r) for r in cur.fetchall()]
     conn.close()
 
     pages = (total + limit - 1) // limit if limit else 0
