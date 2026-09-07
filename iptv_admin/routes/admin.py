@@ -8,7 +8,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from sqlalchemy import or_, desc
 from extensions import db
-from models import User, AccessLog
+from models import User, UserDevice, AccessLog
 from utils import csrf_protect, log_access, utcnow
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -190,6 +190,39 @@ def reset_senha(user_id):
 @csrf_protect
 def excluir(user_id):
     user=user_or_404(user_id); db.session.delete(user); db.session.commit(); flash('Usuário excluído.', 'success'); return redirect(url_for('admin.usuarios'))
+
+@admin_bp.get('/usuarios/<int:user_id>/dispositivos')
+@admin_required
+def dispositivos(user_id):
+    user=user_or_404(user_id)
+    devices=UserDevice.query.filter_by(user_id=user.id).order_by(desc(UserDevice.last_seen)).all()
+    return render_template('admin/dispositivos.html', user=user, devices=devices)
+
+@admin_bp.post('/usuarios/<int:user_id>/dispositivos/revogar')
+@admin_required
+@csrf_protect
+def revogar_dispositivo(user_id):
+    user=user_or_404(user_id)
+    device_id=(request.form.get('device_id') or '').strip()
+    if not device_id:
+        flash('Dispositivo não informado.', 'danger'); return redirect(url_for('admin.dispositivos', user_id=user.id))
+    device=UserDevice.query.filter_by(user_id=user.id, device_id=device_id).first()
+    if device:
+        device.active=False; db.session.commit(); log_access(user.id, 'DEVICE_REVOKED', True, request)
+        flash('Dispositivo encerrado.', 'success')
+    else:
+        flash('Dispositivo não encontrado.', 'warning')
+    return redirect(url_for('admin.dispositivos', user_id=user.id))
+
+@admin_bp.post('/usuarios/<int:user_id>/dispositivos/revogar-todos')
+@admin_required
+@csrf_protect
+def revogar_todos_dispositivos(user_id):
+    user=user_or_404(user_id)
+    count=UserDevice.query.filter_by(user_id=user.id, active=True).update({'active': False})
+    db.session.commit(); log_access(user.id, 'DEVICE_REVOKED_ALL', True, request)
+    flash(f'{count} dispositivo(s) encerrado(s).', 'success')
+    return redirect(url_for('admin.dispositivos', user_id=user.id))
 
 def _streamvault_config(action=None, payload=None):
     base_url = current_app.config.get('IPTV_APP_URL', '').rstrip('/')

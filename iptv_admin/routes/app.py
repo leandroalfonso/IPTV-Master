@@ -83,11 +83,20 @@ def login():
             return render_template('app/login.html', error='Acesso expirado.'), 403
         device_id = claim_device_id(user)
         if device_id is None:
-            log_access(user.id, 'ACCESS_DENIED', False, request)
-            return render_template(
-                'app/login.html',
-                error='Limite de dispositivos atingido. Encerre um dispositivo antes de entrar.',
-            ), 403
+            # Política de 1 dispositivo: o slot já está ocupado por outra sessão.
+            # Se o próprio usuário pediu para assumir (force), encerramos as
+            # sessões anteriores e liberamos o acesso — evita o bloqueio
+            # permanente quando um logout anterior falhou.
+            if request.form.get('force') == '1':
+                _revoke_oldest_devices(user)
+                device_id = claim_device_id(user)
+            if device_id is None:
+                log_access(user.id, 'ACCESS_DENIED', False, request)
+                return render_template(
+                    'app/login.html',
+                    error='Limite de dispositivos atingido. Encerre um dispositivo antes de entrar.',
+                    device_limit=True,
+                ), 403
         session.clear()
         session['app_user_id'] = user.id
         session['app_device_id'] = device_id
@@ -108,6 +117,19 @@ def login():
 @app_user_required
 def home(user):
     return render_template('app/home.html', user=user)
+
+
+def _revoke_oldest_devices(user):
+    """Encerra as sessões ativas mais antigas até caber um novo dispositivo."""
+    from models import UserDevice
+    active = UserDevice.query.filter_by(user_id=user.id, active=True).order_by(
+        UserDevice.last_seen.is_(None), UserDevice.last_seen.asc()
+    ).all()
+    # Mantém no máximo (device_limit - 1) para abrir espaço ao novo login.
+    keep = max(0, (user.device_limit or 1) - 1)
+    for device in active[: len(active) - keep]:
+        device.active = False
+    db.session.commit()
 
 
 def _logout(user):

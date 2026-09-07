@@ -129,6 +129,37 @@ class DeviceLimitApiTests(unittest.TestCase):
         })
         self.assertEqual(second.status_code, 302)
 
+    def test_web_app_login_force_reclaims_slot_when_device_limit_reached(self):
+        first_client = self.app.test_client()
+        first_form = first_client.get('/app/login')
+        csrf = re.search(r'name="_csrf" value="([^"]+)"', first_form.get_data(as_text=True)).group(1)
+        first = first_client.post('/app/login', data={
+            'username': self.credentials['username'],
+            'password': self.credentials['password'],
+            '_csrf': csrf,
+        })
+        self.assertEqual(first.status_code, 302)
+
+        second_client = self.app.test_client()
+        second_form = second_client.get('/app/login')
+        csrf = re.search(r'name="_csrf" value="([^"]+)"', second_form.get_data(as_text=True)).group(1)
+        denied = second_client.post('/app/login', data={
+            'username': self.credentials['username'],
+            'password': self.credentials['password'],
+            '_csrf': csrf,
+        })
+        self.assertEqual(denied.status_code, 403)
+        self.assertIn('Limite de dispositivos atingido.', denied.get_data(as_text=True))
+
+        forced = second_client.post('/app/login', data={
+            'username': self.credentials['username'],
+            'password': self.credentials['password'],
+            '_csrf': csrf,
+            'force': '1',
+        })
+        self.assertEqual(forced.status_code, 302)
+        self.assertIn('iptv_device_id=', forced.headers.get('Set-Cookie', ''))
+
 
 if __name__ == '__main__':
     unittest.main()

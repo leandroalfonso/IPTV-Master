@@ -26,6 +26,13 @@
       <button class="btn btn-primary w-100 mt-3" type="submit">
         <i class="bi bi-box-arrow-in-right"></i> Entrar
       </button>
+
+      {% if device_limit %}
+      <button class="btn btn-outline-light w-100 mt-2" type="submit" name="force" value="1">
+        <i class="bi bi-power"></i> Entrar mesmo assim (encerrar sessões anteriores)
+      </button>
+      <p class="text-secondary small mt-2">Você atingiu o limite de dispositivos. Esta opção encerra as sessões mais antigas para liberar o acesso.</p>
+      {% endif %}
     </form>
   </section>
 </main>
