@@ -3,11 +3,12 @@ import sys
 import tempfile
 import unittest
 import re
+from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from app import create_app
 from extensions import db
-from models import User
+from models import User, UserDevice
 
 
 class DeviceLimitApiTests(unittest.TestCase):
@@ -77,6 +78,28 @@ class DeviceLimitApiTests(unittest.TestCase):
         self.assertEqual(second.status_code, 403)
         self.assertIsNone(second.headers.get('Location'))
         self.assertIn('Limite de dispositivos atingido.', second.get_data(as_text=True))
+
+    def test_api_reclaims_device_that_has_been_idle(self):
+        with self.app.app_context():
+            user = User.query.filter_by(username=self.credentials['username']).one()
+            db.session.add(UserDevice(
+                user_id=user.id,
+                device_id='old-device',
+                active=True,
+                last_seen=datetime.now(timezone.utc) - timedelta(days=2),
+            ))
+            db.session.commit()
+
+        replacement = self.app.test_client().post(
+            '/api/auth',
+            json=self.credentials,
+            headers={'X-Device-ID': 'mobile-device'},
+        )
+        self.assertEqual(replacement.status_code, 200)
+
+        with self.app.app_context():
+            old = UserDevice.query.filter_by(device_id='old-device').one()
+            self.assertFalse(old.active)
 
     def test_web_app_logout_releases_device_for_next_login(self):
         client = self.app.test_client()
