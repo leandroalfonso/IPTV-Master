@@ -27,7 +27,16 @@
   .sv-card .form-control{min-height:48px;font-size:1rem}
   .sv-card .btn-primary{margin-top:24px;min-height:50px;font-weight:800;font-size:1.02rem;display:flex;align-items:center;justify-content:center;gap:8px}
   .sv-foot{text-align:center;color:var(--muted);font-size:.82rem;margin-top:18px}
-  @media(max-width:860px){.sv-login{grid-template-columns:1fr}.sv-hero{display:none}}
+  @media(max-width:860px){
+    .sv-login{grid-template-columns:1fr;min-height:100dvh}
+    .sv-hero{display:none}
+    .sv-panel{padding:24px 16px;background:transparent;backdrop-filter:none}
+    .sv-card{box-shadow:none}
+    /* esconde o chrome do admin (topbar/container) na tela de login no mobile */
+    .topbar{display:none !important}
+    .main-content{padding:0 !important}
+    .container-fluid.py-4{padding:0 !important;overflow-x:hidden}
+  }
 </style>
 
 <main class="sv-login">
