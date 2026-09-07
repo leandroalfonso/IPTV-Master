@@ -1,5 +1,4 @@
 import secrets
-from datetime import timedelta
 from flask import Blueprint, request, jsonify, make_response
 from secrets import compare_digest
 from extensions import db
@@ -8,7 +7,6 @@ from device_policy import can_claim_device
 from utils import log_access, utcnow
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
-DEVICE_IDLE_TIMEOUT = timedelta(hours=24)
 
 def payload():
     data = request.get_json(silent=True) or request.form.to_dict()
@@ -27,16 +25,7 @@ def request_device_id():
 def claim_device_id(user):
     """Registra o dispositivo atual sem acoplar a resposta ao formato da API."""
     device_id = request_device_id() or secrets.token_urlsafe(24)
-    now = utcnow()
-    active_devices = UserDevice.query.filter_by(user_id=user.id, active=True).all()
-    for row in active_devices:
-        last_seen = row.last_seen
-        if last_seen is not None and last_seen.tzinfo is None:
-            last_seen = last_seen.replace(tzinfo=now.tzinfo)
-        if last_seen is None or now - last_seen > DEVICE_IDLE_TIMEOUT:
-            row.active = False
-
-    active_ids = [row.device_id for row in active_devices if row.active]
+    active_ids = [row.device_id for row in UserDevice.query.filter_by(user_id=user.id, active=True).all()]
     if not can_claim_device(active_ids, device_id, user.device_limit):
         return None
     device = UserDevice.query.filter_by(user_id=user.id, device_id=device_id).first()
@@ -44,7 +33,7 @@ def claim_device_id(user):
         device = UserDevice(user_id=user.id, device_id=device_id)
         db.session.add(device)
     device.active = True
-    device.last_seen = now
+    device.last_seen = utcnow()
     device.ip_address = request.remote_addr
     return device_id
 
