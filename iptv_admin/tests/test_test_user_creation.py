@@ -58,7 +58,7 @@ class TestUserCreationTests(unittest.TestCase):
             user = User.query.one()
             self.assertTrue(user.username.startswith("teste-"))
             self.assertEqual(user.name, "Usuário teste")
-            self.assertEqual(user.device_limit, 1)
+            self.assertEqual(user.device_limit, 99)
             self.assertTrue(user.active)
             remaining_hours = (user.expires_at.replace(tzinfo=timezone.utc) - datetime.now(timezone.utc)).total_seconds() / 3600
             self.assertGreater(remaining_hours, 7.9)

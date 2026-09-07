@@ -36,8 +36,13 @@ def parse_days(value, required=False):
         return 0
 
 def parse_device_limit(value):
-    try: return max(1, min(100, int(value)))
-    except (ValueError, TypeError): return 1
+    # O limite de dispositivos foi desativado (qualquer device pode entrar).
+    # Mantemos o campo no formulário apenas para compatibilidade, mas ele não
+    # bloqueia mais nenhum login. Retornamos um valor alto ocioso.
+    try:
+        return max(1, min(100, int(value)))
+    except (ValueError, TypeError):
+        return 99
 
 def status_counts(users):
     counts = {'active': 0, 'expiring': 0, 'expired': 0, 'blocked': 0}
@@ -118,7 +123,7 @@ def criar_usuario_teste():
         active=True,
         activated_at=now,
         expires_at=now + timedelta(hours=8),
-        device_limit=1,
+        device_limit=99,
         notes='Usuário teste criado pelo painel; validade de 8 horas.',
     )
     user.set_password(password)

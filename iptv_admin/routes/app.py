@@ -82,21 +82,6 @@ def login():
             log_access(user.id, 'ACCESS_DENIED', False, request)
             return render_template('app/login.html', error='Acesso expirado.'), 403
         device_id = claim_device_id(user)
-        if device_id is None:
-            # Política de 1 dispositivo: o slot já está ocupado por outra sessão.
-            # Se o próprio usuário pediu para assumir (force), encerramos as
-            # sessões anteriores e liberamos o acesso — evita o bloqueio
-            # permanente quando um logout anterior falhou.
-            if request.form.get('force') == '1':
-                _revoke_oldest_devices(user)
-                device_id = claim_device_id(user)
-            if device_id is None:
-                log_access(user.id, 'ACCESS_DENIED', False, request)
-                return render_template(
-                    'app/login.html',
-                    error='Limite de dispositivos atingido. Encerre um dispositivo antes de entrar.',
-                    device_limit=True,
-                ), 403
         session.clear()
         session['app_user_id'] = user.id
         session['app_device_id'] = device_id

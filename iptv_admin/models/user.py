@@ -17,7 +17,7 @@ class User(db.Model):
     activated_at = db.Column(db.DateTime(timezone=True))
     expires_at = db.Column(db.DateTime(timezone=True))
     last_login = db.Column(db.DateTime(timezone=True))
-    device_limit = db.Column(db.Integer, default=1, nullable=False)
+    device_limit = db.Column(db.Integer, default=99, nullable=False)
     notes = db.Column(db.Text)
 
     logs = db.relationship('AccessLog', back_populates='user', cascade='all, delete-orphan')

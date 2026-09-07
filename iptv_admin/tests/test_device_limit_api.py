@@ -5,12 +5,14 @@ import unittest
 import re
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from app import create_app
 from extensions import db
 from models import User
+from device_policy import can_claim_device
 
 
-class DeviceLimitApiTests(unittest.TestCase):
+class DeviceLimitDisabledTests(unittest.TestCase):
     def setUp(self):
         self.db_file = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
         self.db_file.close()
@@ -43,18 +45,21 @@ class DeviceLimitApiTests(unittest.TestCase):
             db.session.remove()
         os.unlink(self.db_file.name)
 
-    def test_second_device_is_rejected_but_same_device_is_allowed(self):
+    def test_policy_allows_unlimited_devices(self):
+        # Device limit is disabled: any device may claim a slot.
+        self.assertTrue(can_claim_device(['phone-a'], 'phone-a', 1))
+        self.assertTrue(can_claim_device(['phone-a'], 'phone-b', 1))
+        self.assertTrue(can_claim_device(['phone-a', 'phone-b'], 'phone-c', 1))
+
+    def test_api_auth_accepts_many_devices(self):
         first = self.app.test_client().post('/api/auth', json=self.credentials, headers={'X-Device-ID': 'device-a'})
         self.assertEqual(first.status_code, 200)
-
-        same = self.app.test_client().post('/api/auth', json=self.credentials, headers={'X-Device-ID': 'device-a'})
-        self.assertEqual(same.status_code, 200)
-
         second = self.app.test_client().post('/api/auth', json=self.credentials, headers={'X-Device-ID': 'device-b'})
-        self.assertEqual(second.status_code, 403)
-        self.assertEqual(second.get_json()['reason'], 'device_limit')
+        self.assertEqual(second.status_code, 200)
+        third = self.app.test_client().post('/api/auth', json=self.credentials, headers={'X-Device-ID': 'device-c'})
+        self.assertEqual(third.status_code, 200)
 
-    def test_web_app_login_rejects_second_device_at_app_login(self):
+    def test_web_app_login_accepts_second_device_without_limit(self):
         first_client = self.app.test_client()
         first_form = first_client.get('/app/login')
         csrf = re.search(r'name="_csrf" value="([^"]+)"', first_form.get_data(as_text=True)).group(1)
@@ -74,91 +79,34 @@ class DeviceLimitApiTests(unittest.TestCase):
             'password': self.credentials['password'],
             '_csrf': csrf,
         })
-        self.assertEqual(second.status_code, 403)
-        self.assertIsNone(second.headers.get('Location'))
-        self.assertIn('Limite de dispositivos atingido.', second.get_data(as_text=True))
-
-    def test_web_app_logout_releases_device_for_next_login(self):
-        client = self.app.test_client()
-        form = client.get('/app/login')
-        csrf = re.search(r'name="_csrf" value="([^"]+)"', form.get_data(as_text=True)).group(1)
-        first = client.post('/app/login', data={
-            'username': self.credentials['username'],
-            'password': self.credentials['password'],
-            '_csrf': csrf,
-        })
-        self.assertEqual(first.status_code, 302)
-
-        logout_page = client.get('/app')
-        csrf = re.search(r'name="_csrf" value="([^"]+)"', logout_page.get_data(as_text=True)).group(1)
-        logout = client.post('/app/logout', data={'_csrf': csrf})
-        self.assertEqual(logout.status_code, 302)
-
-        next_client = self.app.test_client()
-        form = next_client.get('/app/login')
-        csrf = re.search(r'name="_csrf" value="([^"]+)"', form.get_data(as_text=True)).group(1)
-        second = next_client.post('/app/login', data={
-            'username': self.credentials['username'],
-            'password': self.credentials['password'],
-            '_csrf': csrf,
-        })
+        # With the limit removed, the second device logs in successfully (302).
         self.assertEqual(second.status_code, 302)
+        self.assertIn('iptv_device_id=', second.headers.get('Set-Cookie', ''))
 
-    def test_web_app_get_logout_releases_device_for_cross_service_logout(self):
+    def test_web_app_login_rejects_wrong_password(self):
         client = self.app.test_client()
         form = client.get('/app/login')
         csrf = re.search(r'name="_csrf" value="([^"]+)"', form.get_data(as_text=True)).group(1)
-        first = client.post('/app/login', data={
+        resp = client.post('/app/login', data={
+            'username': self.credentials['username'],
+            'password': 'senha-errada',
+            '_csrf': csrf,
+        })
+        self.assertEqual(resp.status_code, 401)
+        self.assertIn('Usuário ou senha inválidos', resp.get_data(as_text=True))
+
+    def test_web_app_logout_releases_session(self):
+        client = self.app.test_client()
+        form = client.get('/app/login')
+        csrf = re.search(r'name="_csrf" value="([^"]+)"', form.get_data(as_text=True)).group(1)
+        client.post('/app/login', data={
             'username': self.credentials['username'],
             'password': self.credentials['password'],
             '_csrf': csrf,
         })
-        self.assertEqual(first.status_code, 302)
-
         logout = client.get('/app/logout')
         self.assertEqual(logout.status_code, 302)
         self.assertEqual(logout.headers['Location'], '/app/login')
-
-        next_client = self.app.test_client()
-        form = next_client.get('/app/login')
-        csrf = re.search(r'name="_csrf" value="([^"]+)"', form.get_data(as_text=True)).group(1)
-        second = next_client.post('/app/login', data={
-            'username': self.credentials['username'],
-            'password': self.credentials['password'],
-            '_csrf': csrf,
-        })
-        self.assertEqual(second.status_code, 302)
-
-    def test_web_app_login_force_reclaims_slot_when_device_limit_reached(self):
-        first_client = self.app.test_client()
-        first_form = first_client.get('/app/login')
-        csrf = re.search(r'name="_csrf" value="([^"]+)"', first_form.get_data(as_text=True)).group(1)
-        first = first_client.post('/app/login', data={
-            'username': self.credentials['username'],
-            'password': self.credentials['password'],
-            '_csrf': csrf,
-        })
-        self.assertEqual(first.status_code, 302)
-
-        second_client = self.app.test_client()
-        second_form = second_client.get('/app/login')
-        csrf = re.search(r'name="_csrf" value="([^"]+)"', second_form.get_data(as_text=True)).group(1)
-        denied = second_client.post('/app/login', data={
-            'username': self.credentials['username'],
-            'password': self.credentials['password'],
-            '_csrf': csrf,
-        })
-        self.assertEqual(denied.status_code, 403)
-        self.assertIn('Limite de dispositivos atingido.', denied.get_data(as_text=True))
-
-        forced = second_client.post('/app/login', data={
-            'username': self.credentials['username'],
-            'password': self.credentials['password'],
-            '_csrf': csrf,
-            'force': '1',
-        })
-        self.assertEqual(forced.status_code, 302)
-        self.assertIn('iptv_device_id=', forced.headers.get('Set-Cookie', ''))
 
 
 if __name__ == '__main__':

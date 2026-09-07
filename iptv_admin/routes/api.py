@@ -38,9 +38,9 @@ def claim_device_id(user):
     return device_id
 
 def claim_device(user):
+    """Registra o dispositivo atual. O limite de dispositivos foi desativado,
+    então esta função sempre retorna o device_id (nunca nega o acesso)."""
     device_id = claim_device_id(user)
-    if device_id is None:
-        return None, deny('device_limit', 'Limite de dispositivos atingido.', 403, user)
     return device_id, None
 
 def find_authorized(data):

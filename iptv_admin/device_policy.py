@@ -1,9 +1,9 @@
 def can_claim_device(active_device_ids, device_id, limit):
-    """Return whether device_id may use one of the user's active slots."""
-    normalized = {str(value) for value in active_device_ids if value}
-    current = str(device_id or '')
-    try:
-        maximum = max(1, int(limit or 1))
-    except (TypeError, ValueError):
-        maximum = 1
-    return current in normalized or len(normalized) < maximum
+    """Device limit is disabled: any device may claim a slot.
+
+    Kept as a no-op shim so callers don't need to change, but the policy of
+    "one device only" was removed because it was trapping sessions and blocking
+    legitimate logins. Devices are still recorded (for visibility) but never
+    rejected.
+    """
+    return True
