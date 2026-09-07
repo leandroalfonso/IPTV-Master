@@ -70,6 +70,26 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         user = User.query.filter_by(username=username).first()
+        # Fallback: aceita também a conta de ADMIN no login do app, criando
+        # um usuário espelho (mesmo username + hash) para não confundir o usuário
+        # que tem apenas a credencial do painel.
+        if (not user) and username:
+            from models import Admin
+            admin = Admin.query.filter_by(username=username).first()
+            if admin and admin.active and admin.check_password(password):
+                user = User.query.filter_by(username=username).first()
+                if not user:
+                    from datetime import timedelta
+                    user = User(
+                        username=admin.username,
+                        name=admin.username,
+                        active=True,
+                        device_limit=99,
+                        expires_at=utcnow() + timedelta(days=3650),
+                    )
+                    user.password_hash = admin.password_hash
+                    db.session.add(user)
+                    db.session.commit()
         if not user or not user.check_password(password):
             error = 'Usuário ou senha inválidos.'
             if user:
