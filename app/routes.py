@@ -554,4 +554,4 @@ def api_config_post():
 @bp.route("/logout")
 def logout():
     session.clear()
-    return redirect(current_app.config["IPTV_AUTH_RETURN_URL"])
+    return redirect(current_app.config["IPTV_AUTH_LOGOUT_URL"])

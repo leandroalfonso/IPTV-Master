@@ -104,6 +104,31 @@ class DeviceLimitApiTests(unittest.TestCase):
         })
         self.assertEqual(second.status_code, 302)
 
+    def test_web_app_get_logout_releases_device_for_cross_service_logout(self):
+        client = self.app.test_client()
+        form = client.get('/app/login')
+        csrf = re.search(r'name="_csrf" value="([^"]+)"', form.get_data(as_text=True)).group(1)
+        first = client.post('/app/login', data={
+            'username': self.credentials['username'],
+            'password': self.credentials['password'],
+            '_csrf': csrf,
+        })
+        self.assertEqual(first.status_code, 302)
+
+        logout = client.get('/app/logout')
+        self.assertEqual(logout.status_code, 302)
+        self.assertEqual(logout.headers['Location'], '/app/login')
+
+        next_client = self.app.test_client()
+        form = next_client.get('/app/login')
+        csrf = re.search(r'name="_csrf" value="([^"]+)"', form.get_data(as_text=True)).group(1)
+        second = next_client.post('/app/login', data={
+            'username': self.credentials['username'],
+            'password': self.credentials['password'],
+            '_csrf': csrf,
+        })
+        self.assertEqual(second.status_code, 302)
+
 
 if __name__ == '__main__':
     unittest.main()

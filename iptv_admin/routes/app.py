@@ -10,7 +10,7 @@ from flask import Blueprint, abort, current_app, redirect, render_template, requ
 from extensions import db
 from models import User, UserDevice
 from routes.api import claim_device_id
-from utils import csrf_protect, log_access, utcnow
+from utils import csrf_protect, log_access, utcnow, validate_csrf
 
 app_bp = Blueprint('user_app', __name__, url_prefix='/app')
 
@@ -110,10 +110,7 @@ def home(user):
     return render_template('app/home.html', user=user)
 
 
-@app_bp.post('/logout')
-@csrf_protect
-@app_user_required
-def logout(user):
+def _logout(user):
     device_id = session.get('app_device_id')
     if device_id:
         device = UserDevice.query.filter_by(
@@ -130,3 +127,11 @@ def logout(user):
     response = redirect(url_for('user_app.login'))
     response.delete_cookie('iptv_device_id')
     return response
+
+
+@app_bp.route('/logout', methods=['GET', 'POST'])
+@app_user_required
+def logout(user):
+    if request.method == 'POST':
+        validate_csrf()
+    return _logout(user)
