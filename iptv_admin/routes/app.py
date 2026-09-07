@@ -8,7 +8,7 @@ from functools import wraps
 
 from flask import Blueprint, abort, current_app, redirect, render_template, request, session, url_for
 from extensions import db
-from models import User
+from models import User, UserDevice
 from routes.api import claim_device_id
 from utils import csrf_protect, log_access, utcnow
 
@@ -90,6 +90,7 @@ def login():
             ), 403
         session.clear()
         session['app_user_id'] = user.id
+        session['app_device_id'] = device_id
         user.last_login = utcnow()
         db.session.commit()
         log_access(user.id, 'LOGIN', True, request)
@@ -113,6 +114,19 @@ def home(user):
 @csrf_protect
 @app_user_required
 def logout(user):
+    device_id = session.get('app_device_id')
+    if device_id:
+        device = UserDevice.query.filter_by(
+            user_id=user.id,
+            device_id=device_id,
+            active=True,
+        ).first()
+        if device:
+            device.active = False
     session.pop('app_user_id', None)
+    session.pop('app_device_id', None)
     log_access(user.id, 'LOGOUT', True, request)
-    return redirect(url_for('user_app.login'))
+    db.session.commit()
+    response = redirect(url_for('user_app.login'))
+    response.delete_cookie('iptv_device_id')
+    return response

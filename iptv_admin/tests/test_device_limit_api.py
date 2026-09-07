@@ -78,6 +78,32 @@ class DeviceLimitApiTests(unittest.TestCase):
         self.assertIsNone(second.headers.get('Location'))
         self.assertIn('Limite de dispositivos atingido.', second.get_data(as_text=True))
 
+    def test_web_app_logout_releases_device_for_next_login(self):
+        client = self.app.test_client()
+        form = client.get('/app/login')
+        csrf = re.search(r'name="_csrf" value="([^"]+)"', form.get_data(as_text=True)).group(1)
+        first = client.post('/app/login', data={
+            'username': self.credentials['username'],
+            'password': self.credentials['password'],
+            '_csrf': csrf,
+        })
+        self.assertEqual(first.status_code, 302)
+
+        logout_page = client.get('/app')
+        csrf = re.search(r'name="_csrf" value="([^"]+)"', logout_page.get_data(as_text=True)).group(1)
+        logout = client.post('/app/logout', data={'_csrf': csrf})
+        self.assertEqual(logout.status_code, 302)
+
+        next_client = self.app.test_client()
+        form = next_client.get('/app/login')
+        csrf = re.search(r'name="_csrf" value="([^"]+)"', form.get_data(as_text=True)).group(1)
+        second = next_client.post('/app/login', data={
+            'username': self.credentials['username'],
+            'password': self.credentials['password'],
+            '_csrf': csrf,
+        })
+        self.assertEqual(second.status_code, 302)
+
 
 if __name__ == '__main__':
     unittest.main()
