@@ -537,6 +537,51 @@ def get_most_watched(typ: str = None, limit: int = 20) -> list:
     return rows
 
 
+def get_top_rated(typ: str = None, limit: int = 20) -> list:
+    """Mais rankeados por estrelas/pontuação (TMDB vote_average + vote_count).
+
+    Lê o rating hidratado do metadata; ignora itens sem nota. Ordena por
+    nota (estrelas) decrescente e, como desempate, por número de votos
+    (pontuação/popularidade da avaliação). Desduplica filmes por título-base
+    para não repetir Dublado/Legendado do mesmo filme no carrossel.
+    """
+    conn = get_db()
+    cur = conn.cursor()
+    q = "SELECT * FROM contents WHERE metadata IS NOT NULL AND metadata != ''"
+    params = []
+    if typ:
+        q += " AND type = ?"
+        params.append(typ)
+    cur.execute(q, params)
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+
+    rated = []
+    seen_keys = set()
+    for row in rows:
+        try:
+            meta = json.loads(row["metadata"]) if row.get("metadata") else None
+        except (TypeError, ValueError):
+            meta = None
+        tm = (meta or {}).get("tmdb") if meta else None
+        if not tm:
+            continue
+        rating = float(tm.get("rating") or 0)
+        votes = int(tm.get("vote_count") or 0)
+        if rating <= 0:
+            continue
+        # desduplica filmes pela chave de variante (título-base)
+        key = None
+        if row.get("type") == "movie":
+            key, _ = _movie_variant(str(row.get("name", "")), str(row.get("group_name", "")))
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+        rated.append({**row, "rating": rating, "vote_count": votes})
+    rated.sort(key=lambda x: (x["rating"], x["vote_count"]), reverse=True)
+    return rated[:limit]
+
+
 def clear_contents() -> None:
     """Remove todos os conteúdos (usado por "limpar cache")."""
     conn = get_db()

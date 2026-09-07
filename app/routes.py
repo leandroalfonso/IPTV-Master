@@ -143,6 +143,7 @@ def index():
     series = database.get_series_list(limit=20)
     most_watched = tmdb.hydrate(database.get_most_watched(limit=20))
     recently_added = tmdb.hydrate(database.get_recently_added(limit=20))
+    top_rated = tmdb.hydrate(database.get_top_rated(limit=20))
     categories = database.get_categories()[:18]
 
     return render_template(
@@ -155,6 +156,7 @@ def index():
         series=series,
         most_watched=most_watched,
         recently_added=recently_added,
+        top_rated=top_rated,
         categories=categories,
         configured=iptv.is_configured(),
         total=database.count_total(),
