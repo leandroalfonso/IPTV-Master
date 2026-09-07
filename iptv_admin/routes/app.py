@@ -68,7 +68,7 @@ def login():
     error = None
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
-        password = request.form.get('password', '')
+        password = request.form.get('password', '').strip()
         user = User.query.filter_by(username=username).first()
         # Fallback: aceita também a conta de ADMIN no login do app, criando
         # um usuário espelho (mesmo username + hash) para não confundir o usuário
