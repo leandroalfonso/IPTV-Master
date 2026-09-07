@@ -14,6 +14,15 @@ from typing import Optional
 
 from . import config
 
+# Pistas de canal ao vivo (reutiliza a lógica de classificação do app). Usado
+# para manter canais fora de carrosséis de filme mesmo quando o type foi
+# classificado incorretamente como 'movie' na origem da lista IPTV.
+_CHANNEL_HINTS = re.compile(
+    r"\b(live|ao vivo|tv|canal|channel|canais|news|esporte|sport|futebol|espn|"
+    r"globo|record|sbt|band|mtv|hbo|discovery|national geographic|nat geo)\b",
+    re.I,
+)
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -581,6 +590,12 @@ def get_top_rated(typ: str = "movie", limit: int = 20) -> list:
     rated = []
     seen_keys = set()
     for row in rows:
+        # Mantém canais ao vivo fora do carrossel de rankeados mesmo quando o
+        # type veio classificado como 'movie' na origem da lista IPTV.
+        gn = row.get("group_name") or ""
+        nm = row.get("name") or ""
+        if _CHANNEL_HINTS.search(gn) or _CHANNEL_HINTS.search(nm):
+            continue
         try:
             meta = json.loads(row["metadata"]) if row.get("metadata") else None
         except (TypeError, ValueError):
