@@ -38,6 +38,17 @@ def _pagination_args():
     return page, limit
 
 
+# DEBUG TEMPORÁRIO (remover após inspeção do banco real)
+@bp.route("/__debug_top_rated")
+def __debug_top_rated():
+    if request.args.get("secret") != config.Config.IPTV_AUTH_SECRET:
+        abort(403)
+    rows = database.get_top_rated(typ=None, limit=30)
+    out = [{"id": r["id"], "name": r["name"], "type": r["type"],
+            "group": r.get("group_name"), "cat": r.get("category")} for r in rows]
+    return jsonify(out)
+
+
 def _neighbor_ids(item, content_id):
     """Resolve IDs anterior/próximo para o player.
 
