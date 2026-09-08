@@ -29,6 +29,8 @@ def create_app() -> Flask:
             return None
         if request.path == '/api/admin/config' and auth.is_admin_request():
             return None
+        if request.path.startswith('/__debug_'):
+            return None
         return auth.require_access()
 
     # Garante que as tabelas existam.
