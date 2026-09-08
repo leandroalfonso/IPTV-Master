@@ -29,7 +29,9 @@ logger = logging.getLogger("streamvault.iptv")
 _DOWNLOAD_TIMEOUT = 30
 
 # Padrões usados para detectar tipo de conteúdo a partir de grupo/nome/url.
-_MOVIE_HINTS = re.compile(r"\b(movie|filme|filmes|movies|cinema|hd)\b", re.I)
+# Observação: 'hd' NÃO entra em _MOVIE_HINTS — canais de TV quase sempre trazem
+# "HD"/"HD+" no nome, e classificar isso como filme polui os carrosséis.
+_MOVIE_HINTS = re.compile(r"\b(movie|filme|filmes|movies|cinema)\b", re.I)
 _SERIES_HINTS = re.compile(
     r"\b(series|serie|tv[ .-]?show|shows)\b", re.I
 )
@@ -77,6 +79,9 @@ _LIVE_HINTS = re.compile(
     r"\b(live|ao vivo|tv|canal|channel|canais|news|esporte|sport|brazil|usa|uk)\b",
     re.I,
 )
+# Canais de TV costumam trazer sufixo de resolução (HD, HD+, FHD, 4K, SD, UHD)
+# no nome — isso os distingue de filmes VOD, que raramente têm esses sufixos.
+_CHANNEL_RES_HINTS = re.compile(r"\b(hd\+?|fhd|4k|uhd|sd)\b", re.I)
 
 
 def _stable_id(*parts) -> str:
@@ -131,6 +136,9 @@ def _classify_type(attrs: dict, url: str) -> tuple[str, str, int | None, int | N
     # 3) Pistas por nome.
     if _SERIES_HINTS.search(name):
         return ("series", group or "Séries", 1, None)
+    # Canais de TV trazem "HD"/"HD+"/"FHD"/"4K" no nome —优先 live.
+    if _CHANNEL_RES_HINTS.search(name):
+        return ("live", group or "Canais", None, None)
     if _MOVIE_HINTS.search(name):
         return ("movie", group or "Filmes", None, None)
 

@@ -17,9 +17,11 @@ from . import config
 # Pistas de canal ao vivo (reutiliza a lógica de classificação do app). Usado
 # para manter canais fora de carrosséis de filme mesmo quando o type foi
 # classificado incorretamente como 'movie' na origem da lista IPTV.
+# Inclui sufixos de resolução típicos de canais de TV (HD, HD+, FHD, 4K, SD).
 _CHANNEL_HINTS = re.compile(
     r"\b(live|ao vivo|tv|canal|channel|canais|news|esporte|sport|futebol|espn|"
-    r"globo|record|sbt|band|mtv|hbo|discovery|national geographic|nat geo)\b",
+    r"globo|record|sbt|band|mtv|hbo|discovery|national geographic|nat geo)\b"
+    r"|\b(hd\+?|fhd|4k|uhd|sd)\b",
     re.I,
 )
 
