@@ -165,8 +165,13 @@ def get_tmdb(content: dict, force: bool = False) -> dict | None:
     if meta and meta.get("tmdb") and not force:
         tmdb = dict(meta["tmdb"])
         tmdb["_fetched"] = meta.get("_ts") or time.time()
-        _cache[cid] = tmdb
-        return tmdb
+        # Se o metadata existe mas não tem classificação indicativa (foi
+        # enriquecido antes desse campo existir), completa sob demanda.
+        if not tmdb.get("certification") and content.get("type") == "movie":
+            force = True
+        else:
+            _cache[cid] = tmdb
+            return tmdb
 
     # 3) busca na API (somente filmes)
     if content.get("type") != "movie":
@@ -217,7 +222,9 @@ def enrich_pending(batch: int = 200, delay: float = 0.12, max_rounds: int = 0) -
     """Enriquece filmes ainda sem metadata TMDB, em lotes (para rodar em
     background no boot, sem travar requests).
 
-    - Busca apenas linhas type='movie' com metadata vazio/'{}'.
+    - Busca linhas type='movie' sem metadata OU cujo metadata ainda não tenha
+      classificação indicativa (certification) — garante que filmes enriquecidos
+      antes de o campo existir também ganhem o badge de faixa etária.
     - Sem match na API, grava {"tmdb_try": ts} para não re-tentar a cada rodada.
     - delay entre filmes mantém ~6 req/s (limite TMDB é 50/s).
     Retorna o total enriquecido (para logs/testes).
@@ -231,7 +238,8 @@ def enrich_pending(batch: int = 200, delay: float = 0.12, max_rounds: int = 0) -
         try:
             rows = conn.execute(
                 "SELECT id, name, type FROM contents "
-                "WHERE type='movie' AND (metadata IS NULL OR metadata='{}') "
+                "WHERE type='movie' AND "
+                "(metadata IS NULL OR metadata='{}' OR metadata NOT LIKE '%\"certification\"%') "
                 "ORDER BY rowid LIMIT ?",
                 (batch,),
             ).fetchall()
@@ -267,7 +275,8 @@ def start_enrich_worker() -> None:
     try:
         pending = conn.execute(
             "SELECT COUNT(*) FROM contents "
-            "WHERE type='movie' AND (metadata IS NULL OR metadata='{}')"
+            "WHERE type='movie' AND "
+            "(metadata IS NULL OR metadata='{}' OR metadata NOT LIKE '%\"certification\"%')"
         ).fetchone()[0]
     finally:
         conn.close()
