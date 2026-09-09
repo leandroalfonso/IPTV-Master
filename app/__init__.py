@@ -9,7 +9,7 @@ from flask import Flask, send_from_directory, request
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from . import config, database, routes, proxy, auth
+from . import config, database, routes, proxy, auth, tts
 
 
 def create_app() -> Flask:
@@ -38,6 +38,8 @@ def create_app() -> Flask:
     app.register_blueprint(routes.bp)
     # Proxy de streams HLS (resolve CORS da origem IPTV).
     app.register_blueprint(proxy.bp)
+    # Voz (TTS Edge) para descrições de filmes.
+    app.register_blueprint(tts.bp)
 
     # Carrega a lista IPTV (bloqueante na primeira vez se o banco estiver
     # vazio; depois apenas agenda atualização em background quando expirado).

@@ -37,7 +37,7 @@
                 {% endif %}
                 {% if tmdb_meta.year %}<span class="sv-meta-pill" style="background:rgba(255,255,255,.08);border-radius:20px;padding:4px 12px;">{{ tmdb_meta.year }}</span>{% endif %}
                 {% if tmdb_meta.runtime %}<span class="sv-meta-pill" style="background:rgba(255,255,255,.08);border-radius:20px;padding:4px 12px;">{{ tmdb_meta.runtime // 60 }}h{{ '%02d'|format(tmdb_meta.runtime % 60) }}</span>{% endif %}
-                {% for g in tmdb_meta.genres[:4] %}<span class="sv-meta-pill" style="background:rgba(255,255,255,.08);border-radius:20px;padding:4px 12px;">{{ g }}</span>{% endfor %}
+                {% for g in (tmdb_meta.genres | default([], true))[:4] %}<span class="sv-meta-pill" style="background:rgba(255,255,255,.08);border-radius:20px;padding:4px 12px;">{{ g }}</span>{% endfor %}
             </div>
             {% endif %}
 
@@ -45,9 +45,19 @@
             <p class="fst-italic text-secondary"><em>“{{ tmdb_meta.tagline }}”</em></p>
             {% endif %}
             {% if tmdb_meta and tmdb_meta.overview %}
-            <p>{{ tmdb_meta.overview }}</p>
+            <div class="sv-desc-block">
+                <p id="sv-desc-text">{{ tmdb_meta.overview }}</p>
+                <button type="button" class="btn sv-btn-ghost sv-tts-btn" data-id="{{ item.id }}" aria-label="Ouvir descrição">
+                    <i class="bi bi-volume-up-fill"></i> <span class="sv-tts-label">Ouvir descrição</span>
+                </button>
+            </div>
             {% elif item.description %}
-            <p>{{ item.description }}</p>
+            <div class="sv-desc-block">
+                <p id="sv-desc-text">{{ item.description }}</p>
+                <button type="button" class="btn sv-btn-ghost sv-tts-btn" data-id="{{ item.id }}" aria-label="Ouvir descrição">
+                    <i class="bi bi-volume-up-fill"></i> <span class="sv-tts-label">Ouvir descrição</span>
+                </button>
+            </div>
             {% endif %}
 
             <div class="sv-detail-actions">
@@ -87,4 +97,7 @@
     {% endif %}
     {% endif %}
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/tts.js') }}"></script>
 {% endblock %}

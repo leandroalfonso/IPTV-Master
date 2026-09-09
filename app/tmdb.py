@@ -180,8 +180,20 @@ def get_tmdb(content: dict, force: bool = False) -> dict | None:
         tmdb = _fetch_tmdb(content)
     except Exception as exc:
         logger.warning("TMDB falhou para %r: %s", content.get("name"), exc)
+        # Se já havia metadata parcial (ex: falhou só o completamento de
+        # certification), não descarte o que existe — devolva-o.
+        if meta and meta.get("tmdb"):
+            partial = dict(meta["tmdb"])
+            partial["_fetched"] = meta.get("_ts") or time.time()
+            _cache[cid] = partial
+            return partial
         return None
     if not tmdb:
+        if meta and meta.get("tmdb"):
+            partial = dict(meta["tmdb"])
+            partial["_fetched"] = meta.get("_ts") or time.time()
+            _cache[cid] = partial
+            return partial
         return None
 
     database.set_metadata(cid, {"tmdb": tmdb, "_ts": tmdb["_fetched"]})

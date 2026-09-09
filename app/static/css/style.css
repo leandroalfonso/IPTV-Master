@@ -867,3 +867,17 @@ body.sv-cinema-mode .sv-player-page {
     .sv-card:active { transform: scale(.97); }
     .sv-ctrl:hover { transform: none; }
 }
+
+/* === Bloco de descrição + botão de voz (TTS) === */
+.sv-desc-block { margin-bottom: 1rem; }
+.sv-desc-block p { color: var(--text-secondary, #b3b3b3); line-height: 1.6; margin-bottom: .65rem; }
+.sv-tts-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid rgba(255,255,255,.18); border-radius: 999px;
+    padding: 6px 16px; font-size: .85rem; font-weight: 600;
+    color: #fff; background: rgba(255,255,255,.06);
+    transition: background .15s ease, transform .1s ease;
+}
+.sv-tts-btn:hover { background: rgba(255,255,255,.12); }
+.sv-tts-btn:active { transform: scale(.97); }
+.sv-tts-btn i { font-size: 1rem; }
