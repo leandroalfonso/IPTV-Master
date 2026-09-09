@@ -40,15 +40,15 @@ CACHE_TTL = 6 * 3600
 CACHE_MAX_ITEMS = 200
 MAX_CHARS = 2400  # limite defensivo do tamanho da fala
 
-# Vozes padrão pt-BR (Microsoft). Se a lista mudar, cai no fallback do browser.
+# Vozes padrão (Microsoft Edge). Francisca = feminina pt-BR (pedido do usuario).
 VOICE_BY_LANG = {
-    "pt": "pt-BR-AntonioNeural",
-    "pt-br": "pt-BR-AntonioNeural",
-    "en": "en-US-GuyNeural",
-    "es": "es-ES-AlvaroNeural",
-    "fr": "fr-FR-DenisNeural",
-    "de": "de-DE-ConradNeural",
-    "it": "it-IT-DiegoNeural",
+    "pt": "pt-BR-FranciscaNeural",
+    "pt-br": "pt-BR-FranciscaNeural",
+    "en": "en-US-AriaNeural",
+    "es": "es-ES-ElviraNeural",
+    "fr": "fr-FR-DeniseNeural",
+    "de": "de-DE-KatjaNeural",
+    "it": "it-IT-ElsaNeural",
 }
 
 # --------------------------------------------------------------------------- #
