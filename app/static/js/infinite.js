@@ -20,11 +20,21 @@
         return `<img loading="lazy" src="/proxy/image?u=${encodeURIComponent(logo)}" alt="${esc(alt)}" referrerpolicy="no-referrer" onerror="this.style.display='none'">`;
     }
 
-    // Metadado do card de filme: ano · gênero · nota (TMDB quando disponível,
-    // senão a categoria da lista IPTV). Espelha o macro movie_card do template.
+    // Metadado do rodapé do card de filme (espelha o movie_card de filmes.html:
+    // primeiro genero TMDB, senao a categoria da lista IPTV).
     function movieMeta(m) {
         const genre = (m.genres && m.genres[0]) || m.category || "";
-        return [m.year, genre, m.rating ? "★ " + m.rating : ""].filter(Boolean).join(" · ");
+        return [genre].filter(Boolean).join(" · ");
+    }
+
+    // Estrutura de estrela (rating/2 arredondado) identica ao template Jinja.
+    function starRating(rating) {
+        const stars = Math.round(rating / 2);
+        let html = "";
+        for (let i = 0; i < 5; i++) {
+            html += `<i class="bi bi-star-fill${i < stars ? " active" : ""}"></i>`;
+        }
+        return html;
     }
 
     function liveCard(c) {
@@ -46,19 +56,43 @@
         </div>`;
     }
 
+    // Card de filme gerado por JS — espelho 1:1 do movie_card de filmes.html:
+    // badge etario, overlay de hover com descricao + meta, acoes (play/fav),
+    // estrelas de nota e data-cert p/ o filtro client-side funcionar.
     function movieCard(m) {
-        return `<div class="col-6 col-sm-4 col-md-3 col-lg-2 sv-col" data-cat="${esc(m.category)}">
-            <div class="sv-card" data-id="${esc(m.id)}">
+        const desc = (m.description || m.overview || "").slice(0, 140);
+        const overlay = `
+            <div class="sv-card-overlay">
+                <div class="sv-card-overlay-content">
+                    ${desc ? `<p class="sv-ov-desc">${esc(desc)}...</p>` : ""}
+                    <div class="sv-ov-meta">
+                        ${m.year ? `<span class="sv-meta-item"><i class="bi bi-calendar"></i> ${esc(m.year)}</span>` : ""}
+                        ${m.duration ? `<span class="sv-meta-item"><i class="bi bi-clock"></i> ${esc(m.duration)}</span>` : ""}
+                        ${m.certification ? `<span class="sv-meta-item"><i class="bi bi-shield-check"></i> ${esc(m.certification)}</span>` : ""}
+                        ${(m.genres && m.genres.length) ? `<span class="sv-meta-item"><i class="bi bi-tag"></i> ${esc(m.genres[0])}</span>` : ""}
+                    </div>
+                </div>
+                <div class="sv-card-overlay-actions">
+                    <a href="/assistir/${esc(m.id)}" class="sv-play-btn" title="Assistir"><i class="bi bi-play-fill"></i></a>
+                    <button class="sv-fav-btn sv-fav" data-id="${esc(m.id)}" data-type="movie" data-name="${esc(m.name)}" data-logo="${esc(m.logo)}" data-url="${esc(m.url)}" title="Minha lista"><i class="bi bi-plus"></i></button>
+                </div>
+            </div>`;
+        const rating = m.rating ? `
+            <div class="sv-card-rating-info">
+                <div class="sv-star-rating-small">${starRating(m.rating)}</div>
+                <span class="sv-rating-score">${Number(m.rating).toFixed(1)}</span>
+            </div>` : "";
+        return `<div class="col-6 col-sm-4 col-md-3 col-lg-2 sv-col" data-cat="${esc(m.category)}" data-cert="${esc(m.certification || "")}">
+            <div class="sv-card sv-movie-card" data-id="${esc(m.id)}">
                 <a href="/detalhes/${esc(m.id)}" class="sv-card-link">
                     <div class="sv-thumb">
                         ${imgTag(m.logo, m.name)}
                         <div class="sv-thumb-fallback"><i class="bi bi-film"></i></div>
-                        <div class="sv-card-overlay">
-                            <a href="/assistir/${esc(m.id)}" class="sv-play-btn"><i class="bi bi-play-fill"></i></a>
-                            <button class="sv-fav-btn sv-fav" data-id="${esc(m.id)}" data-type="movie" data-name="${esc(m.name)}" data-logo="${esc(m.logo)}" data-url="${esc(m.url)}"><i class="bi bi-plus"></i></button>
-                        </div>
+                        ${m.certification ? `<span class="sv-cert-badge" title="Classificação indicativa">${esc(m.certification)}</span>` : ""}
+                        ${overlay}
                     </div>
                     <div class="sv-card-title">${esc(m.name)}</div>
+                    ${rating}
                     <div class="sv-card-sub">${esc(movieMeta(m))}</div>
                 </a>
             </div>

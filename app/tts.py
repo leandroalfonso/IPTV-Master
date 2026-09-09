@@ -40,10 +40,11 @@ CACHE_TTL = 6 * 3600
 CACHE_MAX_ITEMS = 200
 MAX_CHARS = 2400  # limite defensivo do tamanho da fala
 
-# Vozes padrão (Microsoft Edge). Francisca = feminina pt-BR (pedido do usuario).
+# Vozes padrao (Microsoft Edge). Thalita = feminina pt-BR multilingue (escolha
+# do usuario). Se a lista mudar, cai no fallback do browser.
 VOICE_BY_LANG = {
-    "pt": "pt-BR-FranciscaNeural",
-    "pt-br": "pt-BR-FranciscaNeural",
+    "pt": "pt-BR-ThalitaMultilingualNeural",
+    "pt-br": "pt-BR-ThalitaMultilingualNeural",
     "en": "en-US-AriaNeural",
     "es": "es-ES-ElviraNeural",
     "fr": "fr-FR-DeniseNeural",

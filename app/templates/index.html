@@ -33,7 +33,7 @@
             <div class="sv-card-overlay">
                 <div class="sv-card-overlay-content">
                     {%- if m.description %}
-                    <p class="sv-ov-desc">{{ (m.description or m.category)[:140] }}...</p>
+                    <p class="sv-ov-desc">{{ m.description[:140] }}...</p>
                     {% endif -%}
                     
                     <div class="sv-ov-meta">
