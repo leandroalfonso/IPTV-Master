@@ -10,7 +10,7 @@
             <span class="sv-live-badge"><i class="bi bi-record-circle-fill"></i> AO VIVO</span>
             <div class="sv-card-overlay">
                 <div class="sv-ov-actions">
-                    <a href="/assistir/{{ c.id }}" class="sv-play-btn" aria-label="Assistir"><i class="bi bi-play-fill"></i></a>
+                    <span class="sv-play-btn" data-nav="/assistir/{{ c.id }}" role="link" tabindex="0" aria-label="Assistir"><i class="bi bi-play-fill"></i></span>
                 </div>
                 <div class="sv-card-title text-white mb-0">{{ c.name }}</div>
                 <div class="sv-ov-meta"><span>{{ c.group_name }}</span><span>AO VIVO</span></div>
@@ -45,8 +45,8 @@
                 </div>
                 
                 <div class="sv-card-overlay-actions">
-                    <a href="/assistir/{{ m.id }}" class="sv-play-btn" aria-label="Assistir"><i class="bi bi-play-fill"></i></a>
-                    <button class="sv-fav-btn sv-fav" data-id="{{ m.id }}" data-type="movie" data-name="{{ m.name }}" data-logo="{{ m.logo }}" data-url="{{ m.url }}" aria-label="Minha Lista"><i class="bi bi-plus-lg"></i></button>
+                    <span class="sv-play-btn" data-nav="/assistir/{{ m.id }}" role="link" tabindex="0" aria-label="Assistir"><i class="bi bi-play-fill"></i></span>
+                    <span class="sv-fav-btn sv-fav" role="button" tabindex="0" data-id="{{ m.id }}" data-type="movie" data-name="{{ m.name }}" data-logo="{{ m.logo }}" data-url="{{ m.url }}" aria-label="Minha Lista"><i class="bi bi-plus-lg"></i></span>
                 </div>
             </div>
         </div>
@@ -78,8 +78,8 @@
             <div class="sv-thumb-fallback"><i class="bi bi-collection-play"></i></div>
             <div class="sv-card-overlay">
                 <div class="sv-ov-actions">
-                    <a href="/detalhes-series/{{ s.series_name | urlencode }}" class="sv-play-btn" aria-label="Abrir"><i class="bi bi-play-fill"></i></a>
-                    <button class="sv-fav-btn sv-fav" data-id="{{ s.series_name }}" data-type="series" data-name="{{ s.series_name }}" data-logo="{{ s.logo }}" data-url="" aria-label="Minha Lista"><i class="bi bi-plus-lg"></i></button>
+                    <span class="sv-play-btn" data-nav="/detalhes-series/{{ s.series_name | urlencode }}" role="link" tabindex="0" aria-label="Abrir"><i class="bi bi-play-fill"></i></span>
+                    <span class="sv-fav-btn sv-fav" role="button" tabindex="0" data-id="{{ s.series_name }}" data-type="series" data-name="{{ s.series_name }}" data-logo="{{ s.logo }}" data-url="" aria-label="Minha Lista"><i class="bi bi-plus-lg"></i></span>
                 </div>
                 <div class="sv-ov-meta"><span>{{ s.eps }} episódios</span></div>
             </div>
@@ -100,7 +100,7 @@
             <span class="sv-progress-pct">{{ '%d'|format((h.position / h.duration * 100) if h.duration else 0) }}%</span>
             <div class="sv-card-overlay">
                 <div class="sv-ov-actions">
-                    <a href="/assistir/{{ h.content_id }}" class="sv-play-btn" aria-label="Continuar"><i class="bi bi-play-fill"></i></a>
+                    <span class="sv-play-btn" data-nav="/assistir/{{ h.content_id }}" role="link" tabindex="0" aria-label="Continuar"><i class="bi bi-play-fill"></i></span>
                 </div>
                 <div class="sv-card-title text-white mb-0">{{ h.name }}</div>
             </div>

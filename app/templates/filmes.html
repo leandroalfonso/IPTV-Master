@@ -52,8 +52,8 @@
                             </div>
                             
                             <div class="sv-card-overlay-actions">
-                                <a href="/assistir/{{ m.id }}" class="sv-play-btn" title="Assistir"><i class="bi bi-play-fill"></i></a>
-                                <button class="sv-fav-btn sv-fav" data-id="{{ m.id }}" data-type="movie" data-name="{{ m.name }}" data-logo="{{ m.logo }}" data-url="{{ m.url }}" title="Minha lista"><i class="bi bi-plus"></i></button>
+                                <span class="sv-play-btn" data-nav="/assistir/{{ m.id }}" role="link" tabindex="0" title="Assistir"><i class="bi bi-play-fill"></i></span>
+                                <span class="sv-fav-btn sv-fav" role="button" tabindex="0" data-id="{{ m.id }}" data-type="movie" data-name="{{ m.name }}" data-logo="{{ m.logo }}" data-url="{{ m.url }}" title="Minha lista"><i class="bi bi-plus"></i></span>
                             </div>
                         </div>
                     </div>

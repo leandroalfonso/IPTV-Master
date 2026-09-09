@@ -482,6 +482,17 @@ body.sv-cinema-mode .sv-player-page {
 }
 .sv-thumb:hover { border-color: rgba(255,255,255,.2); }
 .sv-card:hover .sv-card-overlay { opacity: 1; }
+/* Overlay nunca bloqueia o toque/click do card: so os botoes dentro dele
+   recebem eventos. Em mobile, tocar na arte = abrir detalhes (o link .sv-card-link
+   esta por baixo); tocar no play/fav = acao propria. */
+.sv-card-overlay { pointer-events: none; }
+.sv-card-overlay-content { pointer-events: none; }
+.sv-card-overlay .sv-play-btn,
+.sv-card-overlay .sv-fav-btn,
+.sv-card-overlay .sv-ov-actions,
+.sv-card-overlay .sv-card-overlay-actions { pointer-events: auto; }
+/* Pseudo-botao (link nao-nested com data-nav) precisa herdar estilo de link. */
+a.sv-card-link:not([href]) { cursor: pointer; }
 
 /* Melhorias para cards de filme */
 .sv-movie-card:hover { transform: translateY(-14px) scale(1.08); }

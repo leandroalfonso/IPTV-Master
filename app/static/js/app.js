@@ -127,7 +127,20 @@ const SV = (() => {
 
     document.addEventListener('click', (e) => {
         const favBtn = e.target.closest('.sv-fav');
-        if (favBtn) { e.preventDefault(); toggleFavorite(favBtn); }
+        if (favBtn) { e.preventDefault(); e.stopPropagation(); toggleFavorite(favBtn); return; }
+        // Play "aninhado" no link do card virou <span data-nav> (HTML nao aceita
+        // <a> dentro de <a>; no mobile isso quebrava o toque no card inteiro).
+        const nav = e.target.closest('[data-nav]');
+        if (nav) { e.preventDefault(); e.stopPropagation(); window.location.href = nav.dataset.nav; }
+    });
+    // Teclado: Enter/Espaco ativam os pseudo-botoes dos cards.
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const t = e.target;
+        const nav = t.closest && t.closest('[data-nav]');
+        const fav = t.closest && t.closest('.sv-fav');
+        if (nav) { e.preventDefault(); window.location.href = nav.dataset.nav; }
+        else if (fav) { e.preventDefault(); toggleFavorite(fav); }
     });
 
     /* -------- Pesquisa dinâmica (debounce) -------- */

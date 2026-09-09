@@ -21,8 +21,8 @@
                         {{ sv_img(f.logo, f.name) }}
                         <div class="sv-thumb-fallback"><i class="bi bi-play-circle"></i></div>
                         <div class="sv-card-overlay">
-                            <a href="/assistir/{{ f.content_id }}" class="sv-play-btn"><i class="bi bi-play-fill"></i></a>
-                            <button class="sv-fav-btn sv-fav-remove" data-id="{{ f.content_id }}"><i class="bi bi-trash"></i></button>
+                            <span class="sv-play-btn" data-nav="/assistir/{{ f.content_id }}" role="link" tabindex="0" aria-label="Assistir"><i class="bi bi-play-fill"></i></span>
+                            <span class="sv-fav-btn sv-fav-remove" role="button" tabindex="0" data-id="{{ f.content_id }}" aria-label="Remover da lista"><i class="bi bi-trash"></i></span>
                         </div>
                     </div>
                     <div class="sv-card-title">{{ f.name }}</div>

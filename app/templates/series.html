@@ -27,7 +27,7 @@
                         {{ sv_img(s.logo, s.series_name) }}
                         <div class="sv-thumb-fallback"><i class="bi bi-collection-play"></i></div>
                         <div class="sv-card-overlay">
-                            <a href="/detalhes-series/{{ s.series_name | urlencode }}" class="sv-play-btn"><i class="bi bi-play-fill"></i></a>
+                            <span class="sv-play-btn" data-nav="/detalhes-series/{{ s.series_name | urlencode }}" role="link" tabindex="0" aria-label="Abrir"><i class="bi bi-play-fill"></i></span>
                         </div>
                     </div>
                     <div class="sv-card-title">{{ s.series_name }}</div>

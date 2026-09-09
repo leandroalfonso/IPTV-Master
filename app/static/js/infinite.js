@@ -46,7 +46,7 @@
                         <div class="sv-thumb-fallback"><i class="bi bi-tv"></i></div>
                         <span class="sv-live-badge"><i class="bi bi-record-circle"></i> AO VIVO</span>
                         <div class="sv-card-overlay">
-                            <a href="/assistir/${esc(c.id)}" class="sv-play-btn"><i class="bi bi-play-fill"></i></a>
+                            <span class="sv-play-btn" data-nav="/assistir/${esc(c.id)}" role="link" tabindex="0" aria-label="Assistir"><i class="bi bi-play-fill"></i></span>
                         </div>
                     </div>
                     <div class="sv-card-title">${esc(c.name)}</div>
@@ -73,8 +73,8 @@
                     </div>
                 </div>
                 <div class="sv-card-overlay-actions">
-                    <a href="/assistir/${esc(m.id)}" class="sv-play-btn" title="Assistir"><i class="bi bi-play-fill"></i></a>
-                    <button class="sv-fav-btn sv-fav" data-id="${esc(m.id)}" data-type="movie" data-name="${esc(m.name)}" data-logo="${esc(m.logo)}" data-url="${esc(m.url)}" title="Minha lista"><i class="bi bi-plus"></i></button>
+                    <span class="sv-play-btn" data-nav="/assistir/${esc(m.id)}" role="link" tabindex="0" title="Assistir"><i class="bi bi-play-fill"></i></span>
+                    <span class="sv-fav-btn sv-fav" role="button" tabindex="0" data-id="${esc(m.id)}" data-type="movie" data-name="${esc(m.name)}" data-logo="${esc(m.logo)}" data-url="${esc(m.url)}" title="Minha lista"><i class="bi bi-plus"></i></span>
                 </div>
             </div>`;
         const rating = m.rating ? `
@@ -108,7 +108,7 @@
                         ${imgTag(s.logo, name)}
                         <div class="sv-thumb-fallback"><i class="bi bi-collection-play"></i></div>
                         <div class="sv-card-overlay">
-                            <a href="/detalhes-series/${encodeURIComponent(name)}" class="sv-play-btn"><i class="bi bi-play-fill"></i></a>
+                            <span class="sv-play-btn" data-nav="/detalhes-series/${encodeURIComponent(name)}" role="link" tabindex="0" aria-label="Abrir"><i class="bi bi-play-fill"></i></span>
                         </div>
                     </div>
                     <div class="sv-card-title">${esc(name)}</div>
