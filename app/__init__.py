@@ -9,7 +9,7 @@ from flask import Flask, send_from_directory, request
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from . import config, database, routes, proxy, auth, tts
+from . import config, database, routes, proxy, auth, tts, mobile_api
 
 
 def create_app() -> Flask:
@@ -29,6 +29,11 @@ def create_app() -> Flask:
             return None
         if request.path == '/api/admin/config' and auth.is_admin_request():
             return None
+        # API do app nativo: autorizada por Bearer token no decorator
+        # mobile_api.app_api (e /api/app/login valida as credenciais).
+        # Cookies/sessao nao funcionam bem em clients RN -> bypass aqui.
+        if request.path.startswith('/api/app/'):
+            return None
         return auth.require_access()
 
     # Garante que as tabelas existam.
@@ -40,6 +45,8 @@ def create_app() -> Flask:
     app.register_blueprint(proxy.bp)
     # Voz (TTS Edge) para descrições de filmes.
     app.register_blueprint(tts.bp)
+    # API JSON para o app nativo (React Native) — Bearer token.
+    app.register_blueprint(mobile_api.bp)
 
     # Carrega a lista IPTV (bloqueante na primeira vez se o banco estiver
     # vazio; depois apenas agenda atualização em background quando expirado).
