@@ -158,12 +158,17 @@ def _voice_for_lang(lang: str | None) -> str | None:
 
 @bp.get("/tts")
 def tts_describe():
-    content_id = request.args.get("id", "").strip()
+    return tts_response(request.args.get("id", ""), request.args.get("lang"))
+
+
+def tts_response(content_id: str, lang: str | None = None):
+    """Gera a resposta de áudio (cache/edge-tts) — reutilizada pela API do app."""
+    content_id = (content_id or "").strip()
     name, text = _description_for(content_id)
     if not text:
         return jsonify({"error": "sem descrição", "fallback": "browser"}), 404
 
-    voice = _voice_for_lang(request.args.get("lang"))
+    voice = _voice_for_lang(lang)
     if not voice:
         # idioma sem voz neural pt/en/es... conhecida -> usa browser local
         return jsonify({"error": "idioma sem voz edge", "fallback": "browser"}), 501

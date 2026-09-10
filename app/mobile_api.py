@@ -24,7 +24,7 @@ import os
 import time
 
 import flask
-from flask import Blueprint, current_app, jsonify, redirect, request
+from flask import Blueprint, current_app, jsonify, request
 
 from . import config, database, tmdb
 
@@ -398,9 +398,9 @@ def app_history_add():
 @bp.route("/api/app/tts")
 @app_api
 def app_tts():
-    """Redireciona para a rota /tts existente (mesmo áudio/voz/cache)."""
-    from urllib.parse import urlencode
-    return redirect("/tts?" + urlencode(request.args.to_dict()))
+    """Narração da descrição — mesma síntese/cache da web, com Bearer token."""
+    from .tts import tts_response
+    return tts_response(request.args.get("id", "").strip(), request.args.get("lang"))
 
 
 # --------------------------------------------------------------------------- #
